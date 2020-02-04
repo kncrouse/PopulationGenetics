@@ -1,0 +1,6 @@
+  
+.DS_Store
+codemeta.json
+/output/*
+/data/*
+/docs/*
