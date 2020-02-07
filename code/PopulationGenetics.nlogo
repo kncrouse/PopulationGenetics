@@ -16,7 +16,6 @@ breed [ alleles allele ]
 students-own [
   hubnet-client? ; true = hubnet client user ; false = npc student
   user-id ; id that connects each student to the hubnet control center
-  table-id ; number from 1 to 10 to use for histogram plot
   phenotype-population ; collection of phenotypes of student
   gene-flow-student ; adjacent student for gene flow during reproduction
 ]
@@ -46,7 +45,7 @@ to setup
   setup-parameters
   ask patches [ set pcolor grey + 2 ]
   ask students [ setup-student ]
-  update-allele-frequency-plot
+  ;update-allele-frequency-plot
   reset-ticks
 end
 
@@ -79,7 +78,7 @@ to create-new-hubnet-student
 end
 
 to create-new-student
-  create-students 1 [
+  create-students 1 [ ; NOTE: the space after Wu is important because the code requires names to have a minimum length of 3 characters
     set user-id one-of [ "Walker" "McCann" "Bennett" "Kieper" "Driver" "Rowe" "Smith" "Hollenbeck" "Chang" "Moore" "Wu " "McEwan" "Ortner" "Kennedy" "Anderson" "Roeder" "Paulsen" ]
     if any? other students with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ]
        [ set user-id (word user-id " " count students with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ])]
@@ -95,11 +94,10 @@ to setup-student
   ask phenotypes with [ parent-student = myself ] [ remove-phenotype ]
   set color pcolor
   set size 0.1
-  set shape "spade"
+  set shape "clown"
   set gene-flow-student nobody
   create-phenotype-population
   set label user-id
-  set table-id ifelse-value ( not any? students ) [ 0 ] [ ( max [table-id] of students ) + 1 ]
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -144,14 +142,14 @@ end
 to set-phenotype-shape-and-color
   let allele1 [allele-type] of first-allele
   let allele2 [allele-type] of second-allele
-  set shape "spade"
+  set shape "clown"
   if allele1 = "red" and allele2 = "red" [ set color red ]
   if ( allele1 = "red" and allele2 = "blue" ) or ( allele2 = "red" and allele1 = "blue" ) [ set color red ]
   if allele1 = "blue" and allele2 = "blue" [ set color blue ]
   if allele1 = "yellow" and allele2 = "yellow" [ set color yellow ]
   if ( allele1 = "yellow" and allele2 = "blue" ) or ( allele2 = "yellow" and allele1 = "blue" ) [ set color yellow ]
   if ( allele1 = "yellow" and allele2 = "red" ) or ( allele2 = "yellow" and allele1 = "red" ) [
-    set shape (word "spade " [color] of second-allele)
+    set shape (word "clown " [color] of second-allele)
     set color [color] of first-allele ]
 end
 
@@ -386,23 +384,72 @@ end
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 to update-allele-frequency-plot
+
+  set-current-plot "Simpson's Diversity per Population"
+  clear-plot
+
+  let index 0
+  foreach sort students [ s ->
+    let this-current-student s
+    let sum-of-squares 0
+
+    foreach allele-types [ atype ->
+      set sum-of-squares sum-of-squares + (( count alleles with [ color = read-from-string atype and [parent-student] of parent-phenotype = this-current-student ] / ( 2 * population-size )) ^ 2)
+    ]
+
+    set-current-plot-pen "default"
+    plot-pen-down
+    plotxy ( index + 0.1 ) ( 1 - sum-of-squares )
+    plot-pen-up
+
+    set index index + 1
+  ]
+
+  set-current-plot "Proportion of Alleles Per Population"
+  clear-plot
+
+  set index 0
+  foreach sort students [ s ->
+    let this-current-student s
+    let allele-frequency-so-far 1
+
+    foreach allele-types [ atype ->
+
+      set-current-plot-pen atype
+      plot-pen-down
+      plotxy ( index + 0.1 ) allele-frequency-so-far
+      plot-pen-up
+
+      set allele-frequency-so-far allele-frequency-so-far - ( count alleles with [ color = read-from-string atype and [parent-student] of parent-phenotype = this-current-student ] / ( 2 * population-size ))
+      if allele-frequency-so-far < 0 [ set allele-frequency-so-far 0 ]
+
+    ]
+    set index index + 1
+  ]
+
+  set-current-plot "Proportion of Alleles Over Generations"
+  let allele-frequency-so-far 1
   foreach allele-types [ t ->
-;    set-current-plot "Allele Frequencies"
-;    set-current-plot-pen t
-;    plot-pen-down
-;    plotxy generation-number (100 * (count alleles with [ allele-type = t ] / (count alleles + 0.00001)))
-;    plot-pen-up
+    set-current-plot-pen t
+    plot-pen-down
+    let space-index 0
+    repeat 100 [
+      plotxy ( generation-number - 1 + space-index ) allele-frequency-so-far
+      set space-index space-index + 0.01
+    ]
+    plot-pen-up
+    set allele-frequency-so-far ( allele-frequency-so-far - ((count alleles with [ allele-type = t ] / (count alleles + 0.00001))))
   ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-214
+207
 10
-907
-704
+919
+723
 -1
 -1
-16.71
+17.171
 1
 10
 1
@@ -423,9 +470,9 @@ ticks
 30.0
 
 BUTTON
-1012
+1061
 10
-1090
+1179
 43
 NIL
 go
@@ -440,9 +487,9 @@ NIL
 1
 
 BUTTON
-927
+934
 10
-1004
+1050
 43
 reset
 setup
@@ -457,20 +504,20 @@ NIL
 1
 
 SWITCH
-21
+17
 507
-199
+195
 540
 allow-gene-flow?
 allow-gene-flow?
-1
+0
 1
 -1000
 
 TEXTBOX
-21
+17
 433
-214
+210
 451
 --------- Mutation -----------
 11
@@ -478,9 +525,9 @@ TEXTBOX
 1
 
 TEXTBOX
-21
+17
 490
-214
+210
 508
 -------- Gene Flow -----------
 11
@@ -488,9 +535,9 @@ TEXTBOX
 1
 
 TEXTBOX
-22
+18
 548
-214
+210
 566
 ------ Natural Selection -------
 11
@@ -498,24 +545,24 @@ TEXTBOX
 1
 
 SLIDER
-21
+17
 452
-198
+194
 485
 mutation-rate
 mutation-rate
 0
 1.0
-0.01
+0.05
 .01
 1
 NIL
 HORIZONTAL
 
 CHOOSER
-21
+17
 566
-199
+195
 611
 selection-on-phenotype
 selection-on-phenotype
@@ -523,15 +570,15 @@ selection-on-phenotype
 0
 
 SLIDER
-21
+17
 616
-199
+195
 649
 rate-of-selection
 rate-of-selection
 0
-10
-1.2
+5
+1.5
 .1
 1
 NIL
@@ -558,13 +605,13 @@ TEXTBOX
 1
 
 SWITCH
-1216
-60
-1363
-93
+1160
+56
+1334
+89
 show-alleles
 show-alleles
-0
+1
 1
 -1000
 
@@ -612,9 +659,9 @@ TEXTBOX
 1
 
 TEXTBOX
-35
+31
 405
-185
+181
 423
 EVOLUTION SETTINGS
 14
@@ -665,9 +712,9 @@ ALLELE TYPES
 1
 
 BUTTON
-1097
+1188
 10
-1241
+1334
 43
 reproduce
 set generation-number generation-number + 1\nask students [ execute-reproduce ]\nask students [ if ( length phenotype-population > population-size ) [foreach n-of (length phenotype-population - population-size) phenotype-population [ [?1] -> ask ?1 [remove-phenotype] ]]]\nupdate-allele-frequency-plot
@@ -682,10 +729,10 @@ NIL
 1
 
 MONITOR
-927
-53
-1072
-98
+934
+49
+1015
+94
 Generation
 generation-number
 17
@@ -693,10 +740,10 @@ generation-number
 11
 
 MONITOR
-1081
-53
-1209
-98
+1023
+49
+1149
+94
 Total Population
 count phenotypes
 17
@@ -704,10 +751,10 @@ count phenotypes
 11
 
 BUTTON
-1107
-107
-1248
-140
+1188
+101
+1334
+134
 add population
 create-new-student
 NIL
@@ -721,10 +768,10 @@ NIL
 1
 
 SLIDER
-927
-107
-1100
-140
+934
+101
+1178
+134
 population-size
 population-size
 0
@@ -736,61 +783,65 @@ NIL
 HORIZONTAL
 
 PLOT
-928
-151
-1333
-324
-Red Alleles
-NIL
-NIL
+934
+268
+1334
+490
+Proportion of Alleles per Population
+population
+proportion of alleles
 0.0
-10.0
+6.0
 0.0
-10.0
+1.0
 true
 false
 "" ""
 PENS
-"default" 1.0 1 -2674135 true "" "histogram [ [table-id] of [parent-student] of parent-phenotype ] of alleles with [ color = red ]"
+"red" 0.9 1 -2674135 true "" ""
+"blue" 0.9 1 -13345367 true "" ""
+"yellow" 0.9 1 -4079321 true "" ""
 
 PLOT
-928
-331
-1333
-504
-Blue Alleles
-NIL
-NIL
+934
+496
+1334
+718
+Proportion of Alleles Over Generations
+generation
+proportion of alleles
 0.0
 10.0
 0.0
-10.0
+1.0
 true
 false
 "" ""
 PENS
-"default" 1.0 1 -13345367 true "" "histogram [ [table-id] of [parent-student] of parent-phenotype ] of alleles with [ color = blue ]"
+"red" 0.5 1 -2674135 true "" ""
+"blue" 0.5 1 -13345367 true "" ""
+"yellow" 0.5 1 -4079321 true "" ""
 
 PLOT
-928
-512
-1333
-685
-Yellow Alleles
-NIL
-NIL
+934
+143
+1334
+263
+Simpson's Diversity per Population
+population
+D
 0.0
-10.0
+6.0
 0.0
-10.0
+1.0
 true
 false
 "" ""
 PENS
-"default" 1.0 1 -7171555 true "" "histogram [ [table-id] of [parent-student] of parent-phenotype ] of alleles with [ color = yellow ]"
+"default" 0.9 1 -16777216 true "" ""
 
 @#$#@#$#@
-# Population Genetics 2.0.0
+# Population Genetics 1.5.0
 
 ## WHAT IS IT?
 
@@ -867,9 +918,9 @@ Dung, S. K., López, A., Barragan, E. L., Reyes, R. J., Thu, R., Castellanos, E.
 
 ## COPYRIGHT AND LICENSE
 
-Copyright 2018 K N Crouse
+ © 2020 K N Crouse
 
-This model was created at the University of Minnesota as part of a series of applets to illustrate principles in biological evolution.
+This model was created at the University of Minnesota as part of a series of models to illustrate principles in biological evolution.
 
 The model may be freely used, modified and redistributed provided this copyright is included and the resulting models are not used for profit.
 
@@ -884,6 +935,83 @@ circle
 false
 0
 Circle -7500403 true true 0 0 300
+
+clown
+false
+0
+Polygon -7500403 true true 137 105 124 83 103 76 77 75 53 104 47 136
+Polygon -7500403 true true 226 194 223 229 207 243 178 237 169 203 167 175
+Polygon -7500403 true true 137 195 124 217 103 224 77 225 53 196 47 164
+Polygon -7500403 true true 40 123 32 109 16 108 0 130 0 151 7 182 23 190 40 179 47 145
+Polygon -7500403 true true 45 120 90 105 195 90 275 120 294 152 285 165 293 171 270 195 210 210 150 210 45 180
+Circle -1 true false 244 128 26
+Circle -16777216 true false 248 135 14
+Line -16777216 false 48 121 133 96
+Line -16777216 false 48 179 133 204
+Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
+Line -16777216 false 226 102 158 95
+Line -16777216 false 171 208 225 205
+Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
+
+clown 15
+false
+0
+Polygon -7500403 true true 137 105 124 83 103 76 77 75 53 104 47 136
+Polygon -7500403 true true 226 194 223 229 207 243 178 237 169 203 167 175
+Polygon -7500403 true true 137 195 124 217 103 224 77 225 53 196 47 164
+Polygon -7500403 true true 40 123 32 109 16 108 0 130 0 151 7 182 23 190 40 179 47 145
+Polygon -7500403 true true 45 120 90 105 195 90 275 120 294 152 285 165 293 171 270 195 210 210 150 210 45 180
+Circle -1 true false 244 128 26
+Circle -16777216 true false 248 135 14
+Line -16777216 false 48 121 133 96
+Line -16777216 false 48 179 133 204
+Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
+Line -16777216 false 226 102 158 95
+Line -16777216 false 171 208 225 205
+Polygon -2674135 true false 252 111 232 103 213 132 210 165 223 193 229 204 247 201 237 170 236 137
+Polygon -2674135 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
+Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
+Polygon -2674135 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
+
+clown 45
+false
+0
+Polygon -7500403 true true 137 105 124 83 103 76 77 75 53 104 47 136
+Polygon -7500403 true true 226 194 223 229 207 243 178 237 169 203 167 175
+Polygon -7500403 true true 137 195 124 217 103 224 77 225 53 196 47 164
+Polygon -7500403 true true 40 123 32 109 16 108 0 130 0 151 7 182 23 190 40 179 47 145
+Polygon -7500403 true true 45 120 90 105 195 90 275 120 294 152 285 165 293 171 270 195 210 210 150 210 45 180
+Circle -1 true false 244 128 26
+Circle -16777216 true false 248 135 14
+Line -16777216 false 48 121 133 96
+Line -16777216 false 48 179 133 204
+Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
+Line -16777216 false 226 102 158 95
+Line -16777216 false 171 208 225 205
+Polygon -1184463 true false 252 111 232 103 213 132 210 165 223 193 229 204 247 201 237 170 236 137
+Polygon -1184463 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
+Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
+Polygon -1184463 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
+
+clown 95
+false
+0
+Polygon -7500403 true true 137 105 124 83 103 76 77 75 53 104 47 136
+Polygon -7500403 true true 226 194 223 229 207 243 178 237 169 203 167 175
+Polygon -7500403 true true 137 195 124 217 103 224 77 225 53 196 47 164
+Polygon -7500403 true true 40 123 32 109 16 108 0 130 0 151 7 182 23 190 40 179 47 145
+Polygon -7500403 true true 45 120 90 105 195 90 275 120 294 152 285 165 293 171 270 195 210 210 150 210 45 180
+Circle -1 true false 244 128 26
+Circle -16777216 true false 248 135 14
+Line -16777216 false 48 121 133 96
+Line -16777216 false 48 179 133 204
+Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
+Line -16777216 false 226 102 158 95
+Line -16777216 false 171 208 225 205
+Polygon -13791810 true false 252 111 232 103 213 132 210 165 223 193 229 204 247 201 237 170 236 137
+Polygon -13791810 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
+Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
+Polygon -13791810 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
 
 club
 true
@@ -1027,6 +1155,33 @@ Circle -7500403 true true 30 119 122
 Polygon -7500403 true true 134 137 135 253 121 273 105 284 195 284 180 273 165 253 159 138
 Circle -7500403 true true 88 39 122
 Circle -13791810 true false 88 103 124
+
+fish
+false
+0
+Polygon -1 true false 44 131 21 87 15 86 0 120 15 150 0 180 13 214 20 212 45 166
+Polygon -1 true false 135 195 119 235 95 218 76 210 46 204 60 165
+Polygon -1 true false 75 45 83 77 71 103 86 114 166 78 135 60
+Polygon -7500403 true true 30 136 151 77 226 81 280 119 292 146 292 160 287 170 270 195 195 210 151 212 30 166
+Circle -16777216 true false 215 106 30
+
+fish 2
+false
+0
+Polygon -1 true false 56 133 34 127 12 105 21 126 23 146 16 163 10 194 32 177 55 173
+Polygon -7500403 true true 156 229 118 242 67 248 37 248 51 222 49 168
+Polygon -7500403 true true 30 60 45 75 60 105 50 136 150 53 89 56
+Polygon -7500403 true true 50 132 146 52 241 72 268 119 291 147 271 156 291 164 264 208 211 239 148 231 48 177
+Circle -1 true false 237 116 30
+Circle -16777216 true false 241 127 12
+Polygon -1 true false 159 228 160 294 182 281 206 236
+Polygon -7500403 true true 102 189 109 203
+Polygon -1 true false 215 182 181 192 171 177 169 164 152 142 154 123 170 119 223 163
+Line -16777216 false 240 77 162 71
+Line -16777216 false 164 71 98 78
+Line -16777216 false 96 79 62 105
+Line -16777216 false 50 179 88 217
+Line -16777216 false 88 217 149 230
 
 heart
 true
@@ -1354,8 +1509,8 @@ NetLogo 6.1.1
 VIEW
 519
 10
-1169
-660
+1132
+621
 0
 0
 0
