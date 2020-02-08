@@ -418,11 +418,10 @@ to update-allele-frequency-plot
       set-current-plot-pen atype
       plot-pen-down
       let space-index 0
-      ;repeat 100 [
-        plotxy ( index + 0.1 + space-index ) allele-frequency-so-far ; index + 0.1
-      ;  set space-index space-index + 0.01
-      ;]
-      plotxy ( index + 0.1 ) allele-frequency-so-far
+      repeat 100 [
+        plotxy ( index + 0.1  ) allele-frequency-so-far
+        set space-index space-index + 0.01
+      ]
       plot-pen-up
 
       set allele-frequency-so-far allele-frequency-so-far - ( count alleles with [ color = read-from-string atype and [parent-student] of parent-phenotype = this-current-student ] / ( 2 * population-size ))
@@ -803,9 +802,9 @@ true
 false
 "" ""
 PENS
-"red" 0.9 1 -2674135 true "" ""
-"blue" 0.9 1 -13345367 true "" ""
-"yellow" 0.9 1 -4079321 true "" ""
+"red" 1.0 1 -2674135 true "" ""
+"blue" 1.0 1 -13345367 true "" ""
+"yellow" 1.0 1 -4079321 true "" ""
 
 PLOT
 934
