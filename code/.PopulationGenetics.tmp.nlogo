@@ -257,8 +257,7 @@ to update-phenotype-shape-and-color
   ask phenotypes [ set-phenotype-shape-and-color ]
 end
 
-to-report to-upper-case [ input-letter ]
-  print input-letter
+to-report to-upper-case [ input-letter ]\
   let index position input-letter [ "a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" ]
   report item index [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z" ]
 end
@@ -434,12 +433,12 @@ to send-info-to-clients
   let allele-types-list allele-types
   foreach allele-types [ t1 ->
     foreach allele-types-list [ t2 ->
-      let allele-letter-1 first get-allele-color-string t1
+      let allele-letter-1 get-allele-color-string t1
       set allele-letter-1 ifelse-value ( get-allele-dominance t1 = "dominant" ) [ to-upper-case allele-letter-1 ] [ allele-letter-1 ]
-      let allele-letter-2 first get-allele-color-string t2
-      set allele-letter-2 ifelse-value ( get-allele-dominance t2 = "dominant" ) [ to-upper-case allele-letter-2 ] [ allele-letter-2 ]
+      let allele-letter-2 get-allele-color-string t2
+      ;set allele-letter-2 ifelse-value ( get-allele-dominance t2 = "dominant" ) [ to-upper-case allele-letter-2 ] [ allele-letter-2 ]
       let genotype-count count phenotypes with [ member? self [phenotype-population] of myself and (( [allele-type] of first-allele = t1 and [allele-type] of second-allele = t2 ) or ( [allele-type] of first-allele = t2 and [allele-type] of second-allele = t1 ))]
-      set genotypes-string (word genotypes-string allele-letter-1 allele-letter-2 ": " genotype-count "    ")
+      set genotypes-string (word genotypes-string first allele-letter-1 first allele-letter-2 ": " genotype-count "    ")
     ]
     set allele-types-list remove-item 0 allele-types-list ]
   hubnet-send user-id "GENOTYPE FREQUENCIES" genotypes-string
@@ -578,7 +577,7 @@ SWITCH
 665
 allow-gene-flow?
 allow-gene-flow?
-1
+0
 1
 -1000
 
@@ -621,7 +620,7 @@ mutation-rate
 mutation-rate
 0
 1.0
-0.04
+0.03
 .01
 1
 NIL
@@ -903,7 +902,7 @@ CHOOSER
 allele-one-color
 allele-one-color
 "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
-0
+10
 
 CHOOSER
 20
@@ -913,7 +912,7 @@ CHOOSER
 allele-two-color
 allele-two-color
 "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
-6
+2
 
 CHOOSER
 20
@@ -923,7 +922,7 @@ CHOOSER
 allele-three-color
 allele-three-color
 "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
-2
+7
 
 CHOOSER
 20
