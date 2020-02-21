@@ -286,7 +286,10 @@ to execute-reproduce
   ifelse gene-flow-students = no-turtles [
     set total-phenotype-population phenotype-population
   ][
-    set total-phenotype-population sentence phenotype-population [phenotype-population] of one-of gene-flow-students
+    if allow-gene-flow? [
+      ask gene-flow-students [
+        set total-phenotype-population sentence phenotype-population [phenotype-population] of self
+    ]]
   ]
   repeat population-size [ ask one-of old-phenotype-population [ reproduce ( one-of total-phenotype-population ) ] ]
   foreach old-phenotype-population [ [?1] -> ask ?1 [ remove-phenotype ] ]
@@ -578,7 +581,7 @@ SWITCH
 665
 allow-gene-flow?
 allow-gene-flow?
-1
+0
 1
 -1000
 
@@ -621,7 +624,7 @@ mutation-rate
 mutation-rate
 0
 1.0
-0.04
+0.0
 .01
 1
 NIL
