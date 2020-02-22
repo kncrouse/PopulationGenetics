@@ -8,26 +8,26 @@ globals [
   population-radius ; size that the population occupies in the world
 ]
 
-breed [ phenotypes phenotype ]
-breed [ students student ]
+breed [ organisms organism ]
+breed [ populations population ]
 breed [ alleles allele ]
 
-students-own [
-  hubnet-client? ; true = hubnet client user ; false = npc student
-  user-id ; id that connects each student to the hubnet control center
-  phenotype-population ; collection of phenotypes of student
-  gene-flow-students ; adjacent student for gene flow during reproduction
+populations-own [
+  hubnet-client? ; true = hubnet client user ; false = npc population
+  user-id ; id that connects each population to the hubnet control center
+  organism-population ; organisms in a population's population
+  gene-flow-populations ; populations of adjacent populations for gene flow during reproduction
 ]
 
-phenotypes-own [
-  parent-student ; student that contains this phenotype
-  first-allele
-  second-allele
+organisms-own [
+  parent-population ; population that includes this organism
+  first-allele ; first allele of diploid organism
+  second-allele ; second allele of diploid organism
 ]
 
 alleles-own [
-  parent-phenotype ; the phenotype to which this allele belongs
-  allele-type ; type of allele based on gui settings
+  parent-organism ; the organism to which this allele belongs
+  allele-type ; gui settings determine which type matches which color
 ]
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -43,7 +43,7 @@ to setup
   clear-all-plots
   setup-parameters
   ask patches [ set pcolor 87 ]
-  ask students [ setup-student ]
+  ask populations [ setup-population ]
   reset-ticks
 end
 
@@ -64,95 +64,95 @@ to update-allele-types-list
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:            CREATE A STUDENT CLIENT AND SET PARAMETERS                      ::
+;:            CREATE A POPULATION AND SET PARAMETERS                          ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-; create a new student and connect to hubnet
-to create-new-hubnet-student
-  create-students 1 [
+; create a new population and connect to hubnet
+to create-new-hubnet-population
+  create-populations 1 [
     set user-id hubnet-message-source
     set hubnet-client? true
-    setup-student
+    setup-population
     send-info-to-clients
   ]
 end
 
-to create-new-student
-  create-students 1 [ ; NOTE: the space after Wu is important because the code requires names to have a minimum length of 3 characters
+to create-new-population
+  create-populations 1 [ ; NOTE: the space after Wu is important because the code requires names to have a minimum length of 3 characters
     set user-id one-of [ "Walker" "McCann" "Bennett" "Kieper" "Driver" "Rowe" "Smith" "Hollenbeck" "Chang" "Moore" "Wu " "McEwan" "Ortner" "Kennedy" "Anderson" "Roeder" "Paulsen" ]
-    if any? other students with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ]
-       [ set user-id (word user-id " " count students with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ])]
+    if any? other populations with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ]
+       [ set user-id (word user-id " " count populations with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ])]
     set hubnet-client? false
-    setup-student
+    setup-population
   ]
 end
 
-to setup-student
+to setup-population
   move-to one-of patches
   face one-of neighbors4
-  set phenotype-population []
-  ask phenotypes with [ parent-student = myself ] [ remove-phenotype ]
+  set organism-population []
+  ask organisms with [ parent-population = myself ] [ remove-organism ]
   set color pcolor
   set size 0.1
   set shape "clown"
-  set gene-flow-students no-turtles
-  create-phenotype-population
+  set gene-flow-populations no-turtles
+  create-organism-population
   set label user-id
   set xcor xcor + random 5 - random 5
   set ycor ycor + random 5 - random 5
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:       CREATE A PHENOTYPE INDIVIDUALS OF STUDENT AND SET PARAMETERS         ::
+;:       CREATE A ORGANISMS OF POPULATION AND SET PARAMETERS                  ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-to create-phenotype-population
+to create-organism-population
   ; attempting to guaruntee equal alleles at the start of simulation:
   ;  let parent self
   ;  foreach allele-types [ atype ->
-  ;    let number-of-phenotypes floor (population-size / length allele-types)
-  ;    hatch-phenotypes number-of-phenotypes
+  ;    let number-of-organisms floor (population-size / length allele-types)
+  ;    hatch-organisms number-of-organisms
   ;    [
   ;      set first-allele initialize-allele atype
   ;      set second-allele initialize-allele atype
-  ;      set parent-student parent
-  ;      setup-phenotype
-  ;      ask parent [ set phenotype-population lput myself phenotype-population ] ; LINE USED TWICE
+  ;      set parent-population parent
+  ;      setup-organism
+  ;      ask parent [ set organism-population lput myself organism-population ] ; LINE USED TWICE
   ;    ]
   ;  ]
-  ;  if (count phenotypes < population-size) [
-  ;    hatch-phenotypes (population-size - count phenotypes)
+  ;  if (count organisms < population-size) [
+  ;    hatch-organisms (population-size - count organisms)
   ;    [
   ;      let my-atype one-of allele-types
   ;      set first-allele initialize-allele  my-atype
   ;      set second-allele initialize-allele  my-atype
-  ;      set parent-student parent
-  ;      setup-phenotype
-  ;      ask parent [ set phenotype-population lput myself phenotype-population ] ; LINE USED TWICE
+  ;      set parent-population parent
+  ;      setup-organism
+  ;      ask parent [ set organism-population lput myself organism-population ] ; LINE USED TWICE
   ;    ]
   ;  ]
 
   let parent self
-  hatch-phenotypes population-size
+  hatch-organisms population-size
   [
     set first-allele initialize-allele one-of allele-types
     set second-allele initialize-allele one-of allele-types
-    set parent-student parent
-    setup-phenotype
-    ask parent [ set phenotype-population lput myself phenotype-population ]
+    set parent-population parent
+    setup-organism
+    ask parent [ set organism-population lput myself organism-population ]
   ]
 end
 
-to setup-phenotype
+to setup-organism
   set size 3
   set label ""
   set hidden? show-alleles
-  move-to parent-student move-to one-of patches in-radius ( population-radius * 0.75 )
-  set-phenotype-shape-and-color
+  move-to parent-population move-to one-of patches in-radius ( population-radius * 0.75 )
+  set-organism-shape-and-color
 end
 
-; set the shape and color of phenotype based on alleles
-to set-phenotype-shape-and-color
+; set the shape and color of organism based on alleles
+to set-organism-shape-and-color
   let dominance get-allele-dominance-relationship [allele-type] of first-allele [allele-type] of second-allele
   set shape "clown"
   if dominance = "recessive-dominant" [ set color [color] of second-allele ]
@@ -163,7 +163,7 @@ to set-phenotype-shape-and-color
     set color [color] of first-allele ]
 end
 
-; reports the dominance status of the two alleles of a phenotype based on gui settings
+; reports the dominance status of the two alleles of a organism based on gui settings
 to-report get-allele-dominance-relationship [ allele1 allele2 ]
   if ( allele1 = allele2 ) [ report "identical" ] ; (*) ... this line here.
 
@@ -190,17 +190,17 @@ to-report get-allele-dominance-relationship [ allele1 allele2 ]
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:              CREATE ALLELES OF PHENOTYPE AND SET PARAMETERS                ::
+;:              CREATE ALLELES OF organism AND SET PARAMETERS                ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-; create random allele, add to phenotype, and report
+; create random allele, add to organism, and report
 to-report initialize-allele [ atype ]
   let parent self
   let allele-to-report nobody
   hatch-alleles 1 [
     set allele-type atype
     setup-allele
-    set parent-phenotype parent
+    set parent-organism parent
     set allele-to-report self
   ]
   report allele-to-report
@@ -210,7 +210,7 @@ to setup-allele
   set size 1
   set label ""
   set shape "circle"
-  set parent-phenotype nobody
+  set parent-organism nobody
   update-allele-color
   set hidden? not show-alleles
 end
@@ -240,27 +240,27 @@ end
 
 to go
   listen-clients
-  ask students with [ hubnet-client? = false ] [ student-wander ]
-  ask students [ set gene-flow-students get-adjacent-population ]
-  ask phenotypes [ phenotype-wander ]
+  ask populations with [ hubnet-client? = false ] [ population-wander ]
+  ask populations [ set gene-flow-populations get-adjacent-population ]
+  ask organisms [ organism-wander ]
   update-visibility-settings
-  update-phenotype-shape-and-color
+  update-organism-shape-and-color
   update-allele-types-list
-  ask students with [ hubnet-client? = true ] [ send-info-to-clients ]
-  ask phenotypes [ set-phenotype-shape-and-color ]
+  ask populations with [ hubnet-client? = true ] [ send-info-to-clients ]
+  ask organisms [ set-organism-shape-and-color ]
   ask alleles [ update-allele-color ]
   tick
 end
 
-; obsever command to update whether phenotypes or alleles are visible
+; obsever command to update whether organisms or alleles are visible
 to update-visibility-settings
   ask alleles [ set hidden? not show-alleles ]
-  ask phenotypes [ set hidden? show-alleles ]
+  ask organisms [ set hidden? show-alleles ]
 end
 
-; observer command to update the "phenotype" of all phenotypes
-to update-phenotype-shape-and-color
-  ask phenotypes [ set-phenotype-shape-and-color ]
+; observer command to update the "organism" of all organisms
+to update-organism-shape-and-color
+  ask organisms [ set-organism-shape-and-color ]
 end
 
 to-report to-upper-case [ input-letter ]
@@ -269,84 +269,84 @@ to-report to-upper-case [ input-letter ]
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:                          Student Procedures                                ::
+;:                          population Procedures                                ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-to student-wander
-  ;set xcor mean [xcor] of phenotype-population
-  ;set ycor mean [ycor] of phenotype-population
+to population-wander
+  ;set xcor mean [xcor] of organism-population
+  ;set ycor mean [ycor] of organism-population
 end
 
-; student command to move in given direction
+; population command to move in given direction
 to execute-move [new-heading]
   set heading new-heading
   fd 1
-  ask phenotypes with [ parent-student = myself ] [ set heading new-heading fd 1 ]
+  ask organisms with [ parent-population = myself ] [ set heading new-heading fd 1 ]
 end
 
-; student command to ask each phenotype to reproduce
+; population command to ask each organism to reproduce
 to execute-reproduce
-  let old-phenotype-population phenotype-population
-  let total-phenotype-population []
-  ifelse gene-flow-students = no-turtles [
-    set total-phenotype-population phenotype-population
+  let old-organism-population organism-population
+  let total-organism-population []
+  ifelse gene-flow-populations = no-turtles [
+    set total-organism-population organism-population
   ][
     if gene-flow-between-populations [
-      ask gene-flow-students [
-        set total-phenotype-population sentence phenotype-population [phenotype-population] of self
+      ask gene-flow-populations [
+        set total-organism-population sentence organism-population [organism-population] of self
     ]]
   ]
-  repeat population-size [ ask one-of old-phenotype-population [ reproduce ( one-of total-phenotype-population ) ] ]
-  foreach old-phenotype-population [ [?1] -> ask ?1 [ remove-phenotype ] ]
+  repeat population-size [ ask one-of old-organism-population [ reproduce ( one-of total-organism-population ) ] ]
+  foreach old-organism-population [ [?1] -> ask ?1 [ remove-organism ] ]
 end
 
 to-report get-adjacent-population
   let reporter no-turtles
-  if any? other students in-radius ( population-radius * 1.5 )  [
-    set reporter other students in-radius ( population-radius * 1.5 ) ]
+  if any? other populations in-radius ( population-radius * 1.5 )  [
+    set reporter other populations in-radius ( population-radius * 1.5 ) ]
   report reporter
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:                     Phenotype & Allele Procedures                          ::
+;:                     organism & Allele Procedures                          ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-; phenotype command to move position
-to phenotype-wander
-  let patchy one-of patches in-cone population-radius 30 with [ distance [parent-student] of myself <= population-radius ]
-  ifelse patchy = nobody [ face parent-student ] [ face patchy ]
+; organism command to move position
+to organism-wander
+  let patchy one-of patches in-cone population-radius 30 with [ distance [parent-population] of myself <= population-radius ]
+  ifelse patchy = nobody [ face parent-population ] [ face patchy ]
   fd 0.05
   update-allele-positions
 end
 
-; phenotype command to update both allele positions
+; organism command to update both allele positions
 to update-allele-positions
   ask first-allele [ move-to myself set heading [heading] of myself rt 45 fd 0.5 ]
   ask second-allele [ move-to myself set heading [heading] of myself lt 135 fd 0.5 ]
 end
 
-; phenotype command to create offspring from alleles of self and mate
+; organism command to create offspring from alleles of self and mate
 to reproduce [ mate ]
   let number-of-offspring ( floor rate-of-selection ) + ifelse-value ( random-float 1.0 < ( rate-of-selection - floor rate-of-selection ) ) [ 1 ] [ 0 ]
-  hatch-phenotypes ifelse-value (read-from-string selection-on-phenotype = color) [ number-of-offspring ] [ 1 ] [ ; natural selection
+  hatch-organisms ifelse-value (read-from-string selection-on-phenotype = color) [ number-of-offspring ] [ 1 ] [ ; natural selection
     let me self
-    ask parent-student [ set phenotype-population lput myself phenotype-population ]
+    ask parent-population [ set organism-population lput myself organism-population ]
     let possible-alleles ( sentence first-allele [first-allele] of mate sentence second-allele [second-allele] of mate )
 
     ask one-of possible-alleles [ hatch-alleles 1 [
-      set parent-phenotype me
+      set parent-organism me
       ask me [set first-allele myself ]]]
 
     ask one-of possible-alleles [ hatch-alleles 1 [
-      set parent-phenotype me
+      set parent-organism me
       ask me [set second-allele myself ]]]
 
     update-for-mutation
-    setup-phenotype
+    setup-organism
   ]
 end
 
-; phenotype command to mutate alleles based on given gui rate
+; organism command to mutate alleles based on given gui rate
 to update-for-mutation
   if random-float 1.0 < mutation-rate [
     ask first-allele [ remove-allele ]
@@ -356,9 +356,9 @@ to update-for-mutation
     set second-allele initialize-allele one-of allele-types ]
 end
 
-; remove phenotype from the world
-to remove-phenotype
-  ask parent-student [ set phenotype-population remove myself phenotype-population ]
+; remove organism from the world
+to remove-organism
+  ask parent-population [ set organism-population remove myself organism-population ]
   ask first-allele [ remove-allele ]
   ask second-allele [ remove-allele ]
   die
@@ -379,12 +379,12 @@ to listen-clients
   [
     hubnet-fetch-message
     ifelse hubnet-enter-message?
-    [ create-new-hubnet-student ]
+    [ create-new-hubnet-population ]
     [
       ifelse hubnet-exit-message?
-      [ remove-student ]
+      [ remove-population ]
       [
-        ask students with [ user-id = hubnet-message-source ]
+        ask populations with [ user-id = hubnet-message-source ]
           [ execute-command hubnet-message-tag ]
       ]
     ]
@@ -392,10 +392,10 @@ to listen-clients
 end
 
 ; REMOVE ALL AGENTS WHEN YOU CLOSE CLIENT WINDOW
-to remove-student
-  ask students with [user-id = hubnet-message-source]
+to remove-population
+  ask populations with [user-id = hubnet-message-source]
   [
-    foreach phenotype-population [ [?1] -> ask ?1 [ remove-phenotype ] ]
+    foreach organism-population [ [?1] -> ask ?1 [ remove-organism ] ]
     die
   ]
 end
@@ -416,24 +416,24 @@ to execute-command [command]
   [ execute-move 270 stop ]
 end
 
-; student command to send information to corresponding client gui
+; population command to send information to corresponding client gui
 to send-info-to-clients
   hubnet-send user-id "YOU ARE POPULATION" user-id
   hubnet-send user-id "LOCATION" (word "(" pxcor "," pycor ")")
   hubnet-send user-id "GENERATION" generation-number
 
   ; ADJACENT POPULATIONS
-  let adjacent-students ""
-  foreach sort gene-flow-students [ s -> set adjacent-students (word " " [user-id] of s "," adjacent-students ) ]
-  if length adjacent-students > 2 [ set adjacent-students but-first but-last adjacent-students ]
-  hubnet-send user-id "ADJACENT POPULATIONS" ifelse-value ( gene-flow-students = no-turtles ) [ "" ] [ adjacent-students ]
+  let adjacent-populations ""
+  foreach sort gene-flow-populations [ s -> set adjacent-populations (word " " [user-id] of s "," adjacent-populations ) ]
+  if length adjacent-populations > 2 [ set adjacent-populations but-first but-last adjacent-populations ]
+  hubnet-send user-id "ADJACENT POPULATIONS" ifelse-value ( gene-flow-populations = no-turtles ) [ "" ] [ adjacent-populations ]
 
   ; ALLELES
   let alleles-string ""
   foreach allele-types [ t1 ->
     let allele-letter first get-allele-color-string t1
     set allele-letter ifelse-value ( get-allele-dominance t1 = "dominant" ) [ to-upper-case allele-letter ] [ allele-letter ]
-    let allele-count count alleles with [ member? parent-phenotype [phenotype-population] of myself and allele-type = t1 ]
+    let allele-count count alleles with [ member? parent-organism [organism-population] of myself and allele-type = t1 ]
     set alleles-string (word alleles-string allele-letter ": " allele-count "    ") ]
   hubnet-send user-id "ALLELE FREQUENCIES" alleles-string
 
@@ -446,7 +446,7 @@ to send-info-to-clients
       set allele-letter-1 ifelse-value ( get-allele-dominance t1 = "dominant" ) [ to-upper-case allele-letter-1 ] [ allele-letter-1 ]
       let allele-letter-2 first get-allele-color-string t2
       set allele-letter-2 ifelse-value ( get-allele-dominance t2 = "dominant" ) [ to-upper-case allele-letter-2 ] [ allele-letter-2 ]
-      let genotype-count count phenotypes with [ member? self [phenotype-population] of myself and (( [allele-type] of first-allele = t1 and [allele-type] of second-allele = t2 ) or ( [allele-type] of first-allele = t2 and [allele-type] of second-allele = t1 ))]
+      let genotype-count count organisms with [ member? self [organism-population] of myself and (( [allele-type] of first-allele = t1 and [allele-type] of second-allele = t2 ) or ( [allele-type] of first-allele = t2 and [allele-type] of second-allele = t1 ))]
       set genotypes-string (word genotypes-string allele-letter-1 allele-letter-2 ": " genotype-count "    ")
     ]
     set allele-types-list remove-item 0 allele-types-list ]
@@ -463,12 +463,12 @@ to update-allele-frequency-plot
   clear-plot
 
   let index 0
-  foreach sort students [ s ->
-    let this-current-student s
+  foreach sort populations [ s ->
+    let this-current-population s
     let sum-of-squares 0
 
     foreach allele-types [ atype ->
-      set sum-of-squares sum-of-squares + (( count alleles with [ allele-type = atype and [parent-student] of parent-phenotype = this-current-student ] / ( 2 * population-size )) ^ 2)
+      set sum-of-squares sum-of-squares + (( count alleles with [ allele-type = atype and [parent-population] of parent-organism = this-current-population ] / ( 2 * population-size )) ^ 2)
     ]
 
     set-current-plot-pen "default"
@@ -483,8 +483,8 @@ to update-allele-frequency-plot
   clear-plot
 
   set index 0
-  foreach sort students [ s ->
-    let this-current-student s
+  foreach sort populations [ s ->
+    let this-current-population s
     let allele-frequency-so-far 1
 
     foreach allele-types [ atype ->
@@ -496,7 +496,7 @@ to update-allele-frequency-plot
       plotxy ( index + 0.1 ) allele-frequency-so-far
       plot-pen-up
 
-      set allele-frequency-so-far allele-frequency-so-far - ( count alleles with [ allele-type = atype and [parent-student] of parent-phenotype = this-current-student ] / ( 2 * population-size ))
+      set allele-frequency-so-far allele-frequency-so-far - ( count alleles with [ allele-type = atype and [parent-population] of parent-organism = this-current-population ] / ( 2 * population-size ))
       if allele-frequency-so-far < 0 [ set allele-frequency-so-far 0 ]
 
     ]
@@ -637,12 +637,12 @@ SWITCH
 125
 show-alleles
 show-alleles
-0
+1
 1
 -1000
 
 SWITCH
-11
+12
 36
 266
 69
@@ -653,18 +653,18 @@ allele-one-on?
 -1000
 
 SWITCH
-10
+12
 130
 266
 163
 allele-two-on?
 allele-two-on?
-1
+0
 1
 -1000
 
 SWITCH
-11
+12
 224
 267
 257
@@ -728,7 +728,7 @@ MONITOR
 1048
 67
 Total Population
-count phenotypes
+count organisms
 17
 1
 11
@@ -739,7 +739,7 @@ BUTTON
 1415
 125
 add population
-create-new-student
+create-new-population
 NIL
 1
 T
@@ -844,7 +844,7 @@ PENS
 "default" 0.9 1 -16777216 true "" ""
 
 CHOOSER
-11
+12
 73
 124
 118
@@ -854,7 +854,7 @@ allele-one-color
 1
 
 CHOOSER
-10
+12
 167
 123
 212
@@ -864,7 +864,7 @@ allele-two-color
 2
 
 CHOOSER
-11
+12
 262
 124
 307
