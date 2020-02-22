@@ -15,11 +15,11 @@ breed [ alleles allele ]
 populations-own [
   hubnet-client? ; true = hubnet client user ; false = npc population
   user-id ; id that connects each population to the hubnet control center
-  organism-population ; organisms in a population's population
   gene-flow-populations ; populations of adjacent populations for gene flow during reproduction
 ]
 
 organisms-own [
+  my-generation ; generation number when they were born
   parent-population ; population that includes this organism
   first-allele ; first allele of diploid organism
   second-allele ; second allele of diploid organism
@@ -53,18 +53,8 @@ to setup-parameters
   set generation-number 0
 end
 
-; create a list based on which alleles are turned on? in gui settings
-to update-allele-types-list
-  set allele-types []
-  if allele-one-on? [ set allele-types lput "one" allele-types ]
-  if allele-two-on? [ set allele-types lput "two" allele-types ]
-  if allele-three-on? [ set allele-types lput "three" allele-types ]
-  if allele-four-on? [ set allele-types lput "four" allele-types ]
-  ask alleles with [ not member? allele-type allele-types ] [ set allele-type one-of allele-types ]
-end
-
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:            CREATE A POPULATION AND SET PARAMETERS                          ::
+;:            CREATE A POPULATION AND SET VARIABLES                           ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 ; create a new population and connect to hubnet
@@ -77,9 +67,10 @@ to create-new-hubnet-population
   ]
 end
 
+; create a new npc wandering population
 to create-new-population
-  create-populations 1 [ ; NOTE: the space after Wu is important because the code requires names to have a minimum length of 3 characters
-    set user-id one-of [ "Walker" "McCann" "Bennett" "Kieper" "Driver" "Rowe" "Smith" "Hollenbeck" "Chang" "Moore" "Wu " "McEwan" "Ortner" "Kennedy" "Anderson" "Roeder" "Paulsen" ]
+  create-populations 1 [ ; NOTE: the space after 'Wu' is important because the code requires names to have a minimum length of 3 characters
+    set user-id one-of [ "Walker" "McCann" "Bennett" "Kieper" "Driver" "Rowe" "Smith" "Hollenbeck" "Chang" "Moore" "Wu " "McEwan" "Ortner" "Kennedy" "Anderson" "Roeder" "Paulsen" ] ; see Huerta-Sánchez, Rohlfs et al. 2019
     if any? other populations with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ]
        [ set user-id (word user-id " " count populations with [ substring user-id 0 3 = substring [user-id] of myself 0 3 ])]
     set hubnet-client? false
@@ -87,62 +78,48 @@ to create-new-population
   ]
 end
 
+; general population settings
 to setup-population
   move-to one-of patches
-  face one-of neighbors4
-  set organism-population []
   ask organisms with [ parent-population = myself ] [ remove-organism ]
   set color pcolor
-  set size 0.1
+  set size 0
   set shape "clown"
   set gene-flow-populations no-turtles
   create-organism-population
   set label user-id
-  set xcor xcor + random 5 - random 5
-  set ycor ycor + random 5 - random 5
+  set label-color black
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:       CREATE A ORGANISMS OF POPULATION AND SET PARAMETERS                  ::
+;:       CREATE A ORGANISMS OF POPULATION AND SET VARIABLES                   ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 to create-organism-population
-  ; attempting to guaruntee equal alleles at the start of simulation:
-  ;  let parent self
-  ;  foreach allele-types [ atype ->
-  ;    let number-of-organisms floor (population-size / length allele-types)
-  ;    hatch-organisms number-of-organisms
-  ;    [
-  ;      set first-allele initialize-allele atype
-  ;      set second-allele initialize-allele atype
-  ;      set parent-population parent
-  ;      setup-organism
-  ;      ask parent [ set organism-population lput myself organism-population ] ; LINE USED TWICE
-  ;    ]
-  ;  ]
-  ;  if (count organisms < population-size) [
-  ;    hatch-organisms (population-size - count organisms)
-  ;    [
-  ;      let my-atype one-of allele-types
-  ;      set first-allele initialize-allele  my-atype
-  ;      set second-allele initialize-allele  my-atype
-  ;      set parent-population parent
-  ;      setup-organism
-  ;      ask parent [ set organism-population lput myself organism-population ] ; LINE USED TWICE
-  ;    ]
-  ;  ]
+
+  ; this code ensures that initial populations have an even distribution of allele types
+  let total-allele-count 2 * population-size
+  let allele-type-list []
+  let index 0
+  while [ total-allele-count > 0 ] [
+    set allele-type-list lput item index allele-types allele-type-list
+    set total-allele-count total-allele-count - 1
+    set index index + 1
+    if index = length allele-types [ set index 0 ]]
 
   let parent self
   hatch-organisms population-size
   [
-    set first-allele initialize-allele one-of allele-types
-    set second-allele initialize-allele one-of allele-types
+    set first-allele initialize-allele one-of allele-type-list
+    set allele-type-list but-first allele-type-list
+    set second-allele initialize-allele one-of allele-type-list
+    set allele-type-list but-first allele-type-list
     set parent-population parent
     setup-organism
-    ask parent [ set organism-population lput myself organism-population ]
   ]
 end
 
+; general organism settings
 to setup-organism
   set size 3
   set label ""
@@ -164,6 +141,7 @@ to set-organism-shape-and-color
 end
 
 ; reports the dominance status of the two alleles of a organism based on gui settings
+; the above and below functions could probably be consolidated
 to-report get-allele-dominance-relationship [ allele1 allele2 ]
   if ( allele1 = allele2 ) [ report "identical" ] ; (*) ... this line here.
 
@@ -190,7 +168,7 @@ to-report get-allele-dominance-relationship [ allele1 allele2 ]
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:              CREATE ALLELES OF organism AND SET PARAMETERS                ::
+;:              CREATE ALLELES OF ORGANISM AND SET VARIABLES                  ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 ; create random allele, add to organism, and report
@@ -206,6 +184,7 @@ to-report initialize-allele [ atype ]
   report allele-to-report
 end
 
+; general allele settings
 to setup-allele
   set size 1
   set label ""
@@ -220,6 +199,7 @@ to update-allele-color
   set color read-from-string get-allele-color-string allele-type
 end
 
+; reported results depend on gui
 to-report get-allele-color-string [ type-input ]
   if type-input = "one" [ report allele-one-color ]
   if type-input = "two" [ report allele-two-color ]
@@ -227,6 +207,7 @@ to-report get-allele-color-string [ type-input ]
   if type-input = "four" [ report allele-four-color ]
 end
 
+; reported results depend on gui
 to-report get-allele-dominance [ type-input ]
   if type-input = "one" [ report allele-one-dominance ]
   if type-input = "two" [ report allele-two-dominance ]
@@ -241,13 +222,12 @@ end
 to go
   listen-clients
   ask populations with [ hubnet-client? = false ] [ population-wander ]
-  ask populations [ set gene-flow-populations get-adjacent-population ]
+  ask populations [ set gene-flow-populations get-adjacent-populations ]
   ask organisms [ organism-wander ]
   update-visibility-settings
   update-organism-shape-and-color
   update-allele-types-list
   ask populations with [ hubnet-client? = true ] [ send-info-to-clients ]
-  ask organisms [ set-organism-shape-and-color ]
   ask alleles [ update-allele-color ]
   tick
 end
@@ -268,13 +248,31 @@ to-report to-upper-case [ input-letter ]
   report item index [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z" ]
 end
 
+; create a list based on which alleles are turned on in gui settings
+to update-allele-types-list
+  set allele-types []
+  if allele-one-on? [ set allele-types lput "one" allele-types ]
+  if allele-two-on? [ set allele-types lput "two" allele-types ]
+  if allele-three-on? [ set allele-types lput "three" allele-types ]
+  if allele-four-on? [ set allele-types lput "four" allele-types ]
+  ask alleles with [ not member? allele-type allele-types ] [ set allele-type one-of allele-types ]
+end
+
+to execute-reproduce
+  ask organisms with [ my-generation = generation-number ] [ reproduce get-mate-in-gene-pool ]
+  ask organisms with [ my-generation = generation-number ] [ remove-organism ]
+  ask organisms [ if ( count organisms with [ parent-population = myself ] > population-size ) [ ask n-of (count organisms with [ parent-population = myself ] - population-size) organisms with [ parent-population = myself ] [ remove-organism ] ]]
+  set generation-number generation-number + 1
+  update-interface-plots
+end
+
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:                          population Procedures                                ::
+;:                     POPULATION RUNTIME PROCEDURES                          ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 to population-wander
-  ;set xcor mean [xcor] of organism-population
-  ;set ycor mean [ycor] of organism-population
+  set xcor mean [xcor] of organisms with [ parent-population = myself ]
+  set ycor mean [ycor] of organisms with [ parent-population = myself ]
 end
 
 ; population command to move in given direction
@@ -284,23 +282,26 @@ to execute-move [new-heading]
   ask organisms with [ parent-population = myself ] [ set heading new-heading fd 1 ]
 end
 
-; population command to ask each organism to reproduce
-to execute-reproduce
-  let old-organism-population organism-population
-  let total-organism-population []
-  ifelse gene-flow-populations = no-turtles [
-    set total-organism-population organism-population
-  ][
-    if gene-flow-between-populations [
-      ask gene-flow-populations [
-        set total-organism-population sentence organism-population [organism-population] of self
-    ]]
-  ]
-  repeat population-size [ ask one-of old-organism-population [ reproduce ( one-of total-organism-population ) ] ]
-  foreach old-organism-population [ [?1] -> ask ?1 [ remove-organism ] ]
+; organism command to find someone to mate with
+to-report get-mate-in-gene-pool
+;  ask organisms [
+;    let old-organism-population organisms with [
+;      let total-organism-population []
+;      ifelse gene-flow-populations = no-turtles [
+;        set total-organism-population organism-population
+;      ][
+;        if gene-flow-between-populations [
+;          ask gene-flow-populations [
+;            set total-organism-population sentence organism-population [organism-population] of self
+;        ]]
+;      ]
+;      repeat population-size [ ask one-of old-organism-population [ reproduce ( one-of total-organism-population ) ] ]
+;      foreach old-organism-population [ [?1] -> ask ?1 [ remove-organism ] ]
+;  ]]
+  report one-of organisms with [ my-generation = generation-number ]
 end
 
-to-report get-adjacent-population
+to-report get-adjacent-populations
   let reporter no-turtles
   if any? other populations in-radius ( population-radius * 1.5 )  [
     set reporter other populations in-radius ( population-radius * 1.5 ) ]
@@ -308,7 +309,7 @@ to-report get-adjacent-population
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-;:                     organism & Allele Procedures                          ::
+;:                   ORGANISM & ALLELE RUNTIME PROCEDURES                     ::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 ; organism command to move position
@@ -330,7 +331,6 @@ to reproduce [ mate ]
   let number-of-offspring ( floor rate-of-selection ) + ifelse-value ( random-float 1.0 < ( rate-of-selection - floor rate-of-selection ) ) [ 1 ] [ 0 ]
   hatch-organisms ifelse-value (read-from-string selection-on-phenotype = color) [ number-of-offspring ] [ 1 ] [ ; natural selection
     let me self
-    ask parent-population [ set organism-population lput myself organism-population ]
     let possible-alleles ( sentence first-allele [first-allele] of mate sentence second-allele [second-allele] of mate )
 
     ask one-of possible-alleles [ hatch-alleles 1 [
@@ -342,6 +342,7 @@ to reproduce [ mate ]
       ask me [set second-allele myself ]]]
 
     update-for-mutation
+    set my-generation [my-generation] of myself + 1
     setup-organism
   ]
 end
@@ -358,7 +359,6 @@ end
 
 ; remove organism from the world
 to remove-organism
-  ask parent-population [ set organism-population remove myself organism-population ]
   ask first-allele [ remove-allele ]
   ask second-allele [ remove-allele ]
   die
@@ -395,7 +395,7 @@ end
 to remove-population
   ask populations with [user-id = hubnet-message-source]
   [
-    foreach organism-population [ [?1] -> ask ?1 [ remove-organism ] ]
+    ask organisms with [ parent-population = myself ] [ remove-organism ]
     die
   ]
 end
@@ -430,26 +430,26 @@ to send-info-to-clients
 
   ; ALLELES
   let alleles-string ""
-  foreach allele-types [ t1 ->
-    let allele-letter first get-allele-color-string t1
-    set allele-letter ifelse-value ( get-allele-dominance t1 = "dominant" ) [ to-upper-case allele-letter ] [ allele-letter ]
-    let allele-count count alleles with [ member? parent-organism [organism-population] of myself and allele-type = t1 ]
-    set alleles-string (word alleles-string allele-letter ": " allele-count "    ") ]
+;  foreach allele-types [ t1 ->
+;    let allele-letter first get-allele-color-string t1
+;    set allele-letter ifelse-value ( get-allele-dominance t1 = "dominant" ) [ to-upper-case allele-letter ] [ allele-letter ]
+;    let allele-count count alleles with [ member? parent-organism [organism-population] of myself and allele-type = t1 ]
+;    set alleles-string (word alleles-string allele-letter ": " allele-count "    ") ]
   hubnet-send user-id "ALLELE FREQUENCIES" alleles-string
 
   ; GENOTYPES
   let genotypes-string ""
   let allele-types-list allele-types
-  foreach allele-types [ t1 ->
-    foreach allele-types-list [ t2 ->
-      let allele-letter-1 first get-allele-color-string t1
-      set allele-letter-1 ifelse-value ( get-allele-dominance t1 = "dominant" ) [ to-upper-case allele-letter-1 ] [ allele-letter-1 ]
-      let allele-letter-2 first get-allele-color-string t2
-      set allele-letter-2 ifelse-value ( get-allele-dominance t2 = "dominant" ) [ to-upper-case allele-letter-2 ] [ allele-letter-2 ]
-      let genotype-count count organisms with [ member? self [organism-population] of myself and (( [allele-type] of first-allele = t1 and [allele-type] of second-allele = t2 ) or ( [allele-type] of first-allele = t2 and [allele-type] of second-allele = t1 ))]
-      set genotypes-string (word genotypes-string allele-letter-1 allele-letter-2 ": " genotype-count "    ")
-    ]
-    set allele-types-list remove-item 0 allele-types-list ]
+;  foreach allele-types [ t1 ->
+;    foreach allele-types-list [ t2 ->
+;      let allele-letter-1 first get-allele-color-string t1
+;      set allele-letter-1 ifelse-value ( get-allele-dominance t1 = "dominant" ) [ to-upper-case allele-letter-1 ] [ allele-letter-1 ]
+;      let allele-letter-2 first get-allele-color-string t2
+;      set allele-letter-2 ifelse-value ( get-allele-dominance t2 = "dominant" ) [ to-upper-case allele-letter-2 ] [ allele-letter-2 ]
+;      let genotype-count count organisms with [ member? self [organism-population] of myself and (( [allele-type] of first-allele = t1 and [allele-type] of second-allele = t2 ) or ( [allele-type] of first-allele = t2 and [allele-type] of second-allele = t1 ))]
+;      set genotypes-string (word genotypes-string allele-letter-1 allele-letter-2 ": " genotype-count "    ")
+;    ]
+;    set allele-types-list remove-item 0 allele-types-list ]
   hubnet-send user-id "GENOTYPE FREQUENCIES" genotypes-string
 end
 
@@ -457,28 +457,26 @@ end
 ;:::::: Plots ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-to update-allele-frequency-plot
+to update-interface-plots
 
+  ; ALLELE VARIATION WITHIN POPULATION
   set-current-plot "Variation in Alleles per Population"
   clear-plot
-
   let index 0
   foreach sort populations [ s ->
     let this-current-population s
     let sum-of-squares 0
 
     foreach allele-types [ atype ->
-      set sum-of-squares sum-of-squares + (( count alleles with [ allele-type = atype and [parent-population] of parent-organism = this-current-population ] / ( 2 * population-size )) ^ 2)
-    ]
+      set sum-of-squares sum-of-squares + (( count alleles with [ allele-type = atype and [parent-population] of parent-organism = this-current-population ] / ( 2 * population-size )) ^ 2)]
 
     set-current-plot-pen "default"
     plot-pen-down
     plotxy ( index + 0.1 ) ( 1 - sum-of-squares )
     plot-pen-up
+    set index index + 1 ]
 
-    set index index + 1
-  ]
-
+  ; PROPORTION OF ALLELES WITHIN POPULATION
   set-current-plot "Proportion of Alleles Per Population"
   clear-plot
 
@@ -495,14 +493,12 @@ to update-allele-frequency-plot
       plotxy ( index + 0.1 + space-index ) allele-frequency-so-far
       plotxy ( index + 0.1 ) allele-frequency-so-far
       plot-pen-up
-
       set allele-frequency-so-far allele-frequency-so-far - ( count alleles with [ allele-type = atype and [parent-population] of parent-organism = this-current-population ] / ( 2 * population-size ))
-      if allele-frequency-so-far < 0 [ set allele-frequency-so-far 0 ]
+      if allele-frequency-so-far < 0 [ set allele-frequency-so-far 0 ]]
 
-    ]
-    set index index + 1
-  ]
+    set index index + 1 ]
 
+  ; PROPORTION OF ALL ALLELES OVER GENERATIONS
   set-current-plot "Proportion of Alleles Over Generations"
   let allele-frequency-so-far 1
   foreach allele-types [ t ->
@@ -514,8 +510,8 @@ to update-allele-frequency-plot
       set space-index space-index + 0.01
     ]
     plot-pen-up
-    set allele-frequency-so-far ( allele-frequency-so-far - ((count alleles with [ color = get-allele-color-string t ] / (count alleles + 0.00001))))
-  ]
+    set allele-frequency-so-far ( allele-frequency-so-far - ((count alleles with [ color = get-allele-color-string t ] / (count alleles + 0.00001)))) ]
+
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -599,7 +595,7 @@ mutation-rate
 mutation-rate
 0
 1.0
-0.01
+0.02
 .01
 1
 NIL
@@ -624,7 +620,7 @@ rate-of-selection
 rate-of-selection
 0
 5
-1.3
+1.0
 .1
 1
 NIL
@@ -637,7 +633,7 @@ SWITCH
 125
 show-alleles
 show-alleles
-1
+0
 1
 -1000
 
@@ -666,7 +662,7 @@ allele-two-on?
 SWITCH
 12
 224
-267
+266
 257
 allele-three-on?
 allele-three-on?
@@ -700,7 +696,7 @@ BUTTON
 1415
 43
 reproduce
-set generation-number generation-number + 1\nask students [ execute-reproduce ]\nask students [ if ( length phenotype-population > population-size ) [foreach n-of (length phenotype-population - population-size) phenotype-population [ [?1] -> ask ?1 [remove-phenotype] ]]]\nupdate-allele-frequency-plot
+execute-reproduce
 NIL
 1
 T
@@ -783,7 +779,7 @@ false
 PENS
 "red" 0.9 1 -2674135 true "" ""
 "blue" 0.9 1 -13345367 true "" ""
-"yellow" 0.9 1 -4079321 true "" ""
+"yellow" 0.9 1 -1184463 true "" ""
 "orange" 0.9 1 -955883 true "" ""
 "brown" 0.9 1 -6459832 true "" ""
 "lime" 0.9 1 -13840069 true "" ""
@@ -891,12 +887,12 @@ CHOOSER
 allele-two-dominance
 allele-two-dominance
 "dominant" "recessive"
-0
+1
 
 CHOOSER
 128
 262
-267
+266
 307
 allele-three-dominance
 allele-three-dominance
@@ -906,7 +902,7 @@ allele-three-dominance
 SWITCH
 12
 320
-267
+266
 353
 allele-four-on?
 allele-four-on?
@@ -927,7 +923,7 @@ allele-four-color
 CHOOSER
 129
 358
-267
+266
 403
 allele-four-dominance
 allele-four-dominance
@@ -955,7 +951,7 @@ BUTTON
 1243
 84
 reproduce continuously
-\nif ( ticks > 0 and ceiling ( ticks / reproduce-every ) = ticks / reproduce-every ) [\nset generation-number generation-number + 1\nask students [ execute-reproduce ]\nask students [ if ( length phenotype-population > population-size ) [foreach n-of (length phenotype-population - population-size) phenotype-population [ [?1] -> ask ?1 [remove-phenotype] ]]]\nupdate-allele-frequency-plot ]
+if ( ticks > 0 and ceiling ( ticks / reproduce-every ) = ticks / reproduce-every ) [\nexecute-reproduce\n]
 T
 1
 T
@@ -1300,10 +1296,10 @@ Line -16777216 false 48 179 133 204
 Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
 Line -16777216 false 226 102 158 95
 Line -16777216 false 171 208 225 205
-Polygon -10899396 true false 252 111 232 103 213 132 210 165 223 193 229 204 247 201 237 170 236 137
-Polygon -10899396 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
+Polygon -13840069 true false 252 111 232 103 213 132 210 165 223 193 229 204 247 201 237 170 236 137
+Polygon -13840069 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
 Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
-Polygon -10899396 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
+Polygon -13840069 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
 
 clown 75
 false
@@ -1401,7 +1397,7 @@ VIEW
 14
 234
 540
-784
+781
 0
 0
 0
@@ -1497,9 +1493,9 @@ NIL
 
 MONITOR
 14
-63
+64
 295
-112
+113
 ADJACENT POPULATIONS
 NIL
 3
@@ -1527,9 +1523,9 @@ NIL
 
 MONITOR
 14
-116
+118
 295
-165
+167
 ALLELE FREQUENCIES
 NIL
 3
