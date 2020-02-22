@@ -59,6 +59,8 @@ to update-allele-types-list
   if allele-one-on? [ set allele-types lput "one" allele-types ]
   if allele-two-on? [ set allele-types lput "two" allele-types ]
   if allele-three-on? [ set allele-types lput "three" allele-types ]
+  if allele-four-on? [ set allele-types lput "four" allele-types ]
+  ask alleles with [ not member? allele-type allele-types ] [ set allele-type one-of allele-types ]
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -170,6 +172,7 @@ to-report get-allele-dominance-relationship [ allele1 allele2 ]
     ( allele1 = "one" ) [ allele-one-dominance ]
     ( allele1 = "two" ) [ allele-two-dominance ]
     ( allele1 = "three" ) [ allele-three-dominance ]
+    ( allele1 = "four" ) [ allele-four-dominance ]
     [ "" ])
 
   let dominance2
@@ -177,6 +180,7 @@ to-report get-allele-dominance-relationship [ allele1 allele2 ]
     ( allele2 = "one" ) [ allele-one-dominance ]
     ( allele2 = "two" ) [ allele-two-dominance ]
     ( allele2 = "three" ) [ allele-three-dominance ]
+    ( allele2 = "four" ) [ allele-four-dominance ]
     [ "" ])
 
   if ( dominance1 = "dominant" and dominance2 = "dominant" ) [ report "codominant" ]
@@ -220,12 +224,14 @@ to-report get-allele-color-string [ type-input ]
   if type-input = "one" [ report allele-one-color ]
   if type-input = "two" [ report allele-two-color ]
   if type-input = "three" [ report allele-three-color ]
+  if type-input = "four" [ report allele-four-color ]
 end
 
 to-report get-allele-dominance [ type-input ]
   if type-input = "one" [ report allele-one-dominance ]
   if type-input = "two" [ report allele-two-dominance ]
   if type-input = "three" [ report allele-three-dominance ]
+  if type-input = "four" [ report allele-four-dominance ]
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -258,7 +264,6 @@ to update-phenotype-shape-and-color
 end
 
 to-report to-upper-case [ input-letter ]
-  print input-letter
   let index position input-letter [ "a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" ]
   report item index [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z" ]
 end
@@ -268,8 +273,8 @@ end
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 to student-wander
-  face one-of neighbors
-  fd 0.5
+  ;set xcor mean [xcor] of phenotype-population
+  ;set ycor mean [ycor] of phenotype-population
 end
 
 ; student command to move in given direction
@@ -286,7 +291,7 @@ to execute-reproduce
   ifelse gene-flow-students = no-turtles [
     set total-phenotype-population phenotype-population
   ][
-    if allow-gene-flow? [
+    if gene-flow-between-populations [
       ask gene-flow-students [
         set total-phenotype-population sentence phenotype-population [phenotype-population] of self
     ]]
@@ -454,7 +459,7 @@ end
 
 to update-allele-frequency-plot
 
-  set-current-plot "Simpson's Diversity per Population"
+  set-current-plot "Variation in Alleles per Population"
   clear-plot
 
   let index 0
@@ -514,9 +519,9 @@ to update-allele-frequency-plot
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-207
+281
 10
-987
+1061
 791
 -1
 -1
@@ -541,9 +546,9 @@ ticks
 30.0
 
 BUTTON
-1130
+1172
 10
-1248
+1279
 43
 NIL
 go
@@ -558,9 +563,9 @@ NIL
 1
 
 BUTTON
-1003
+1077
 10
-1119
+1167
 43
 reset
 setup
@@ -575,111 +580,61 @@ NIL
 1
 
 SWITCH
-19
-632
-192
-665
-allow-gene-flow?
-allow-gene-flow?
-0
+12
+528
+267
+561
+gene-flow-between-populations
+gene-flow-between-populations
+1
 1
 -1000
 
-TEXTBOX
-17
-558
-210
-576
---------- Mutation -----------
-11
-0.0
-1
-
-TEXTBOX
-17
-615
-210
-633
--------- Gene Flow -----------
-11
-0.0
-1
-
-TEXTBOX
-18
-673
-210
-691
------- Natural Selection -------
-11
-0.0
-1
-
 SLIDER
-19
-577
-191
-610
+12
+487
+267
+520
 mutation-rate
 mutation-rate
 0
 1.0
-0.0
+0.01
 .01
 1
 NIL
 HORIZONTAL
 
 CHOOSER
-17
-693
-190
-738
+12
+569
+267
+614
 selection-on-phenotype
 selection-on-phenotype
-"red" "blue" "yellow"
-0
+"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
+2
 
 SLIDER
-17
-743
-190
-776
+12
+622
+267
+655
 rate-of-selection
 rate-of-selection
 0
 5
-1.0
+1.3
 .1
 1
 NIL
 HORIZONTAL
 
-TEXTBOX
-46
-32
-189
-53
----- allele one ----
-12
-0.0
-1
-
-TEXTBOX
-43
-193
-191
-223
----- allele two ----\n
-12
-0.0
-1
-
 SWITCH
-1229
-56
-1403
-89
+1077
+92
+1243
+125
 show-alleles
 show-alleles
 0
@@ -687,10 +642,10 @@ show-alleles
 -1000
 
 SWITCH
-20
-102
-192
-135
+11
+36
+266
+69
 allele-one-on?
 allele-one-on?
 0
@@ -698,21 +653,21 @@ allele-one-on?
 -1000
 
 SWITCH
-20
-264
-192
-297
+10
+130
+266
+163
 allele-two-on?
 allele-two-on?
-0
+1
 1
 -1000
 
 SWITCH
-21
-425
-193
-458
+11
+224
+267
+257
 allele-three-on?
 allele-three-on?
 0
@@ -720,29 +675,19 @@ allele-three-on?
 -1000
 
 TEXTBOX
-40
-355
-196
-385
----- allele three ----
-12
-0.0
-1
-
-TEXTBOX
-31
-530
-181
-548
+63
+419
+213
+437
 EVOLUTION SETTINGS
 14
 0.0
 1
 
 TEXTBOX
-59
+88
 10
-158
+187
 28
 ALLELE TYPES
 14
@@ -750,9 +695,9 @@ ALLELE TYPES
 1
 
 BUTTON
-1257
+1284
 10
-1403
+1415
 43
 reproduce
 set generation-number generation-number + 1\nask students [ execute-reproduce ]\nask students [ if ( length phenotype-population > population-size ) [foreach n-of (length phenotype-population - population-size) phenotype-population [ [?1] -> ask ?1 [remove-phenotype] ]]]\nupdate-allele-frequency-plot
@@ -767,10 +712,10 @@ NIL
 1
 
 MONITOR
-1003
-49
-1084
-94
+293
+24
+374
+69
 Generation
 generation-number
 17
@@ -778,10 +723,10 @@ generation-number
 11
 
 MONITOR
-1092
-49
-1218
-94
+942
+22
+1048
+67
 Total Population
 count phenotypes
 17
@@ -789,10 +734,10 @@ count phenotypes
 11
 
 BUTTON
-1257
-101
-1403
-134
+1251
+92
+1415
+125
 add population
 create-new-student
 NIL
@@ -806,10 +751,10 @@ NIL
 1
 
 SLIDER
-1003
-101
-1247
-134
+12
+447
+267
+480
 population-size
 population-size
 10
@@ -821,10 +766,10 @@ NIL
 HORIZONTAL
 
 PLOT
-1003
-296
-1403
-532
+1077
+340
+1416
+535
 Proportion of Alleles per Population
 population
 proportion of alleles
@@ -851,10 +796,10 @@ PENS
 "gray" 0.9 1 -7500403 true "" ""
 
 PLOT
-1003
-537
-1403
-789
+1077
+546
+1416
+740
 Proportion of Alleles Over Generations
 generation
 proportion of alleles
@@ -881,13 +826,13 @@ PENS
 "gray" 1.0 1 -7500403 false "" ""
 
 PLOT
-1003
-143
-1403
-290
-Simpson's Diversity per Population
+1077
+136
+1415
+331
+Variation in Alleles per Population
 population
-D
+Simpson's Diversity
 0.0
 6.0
 0.0
@@ -899,67 +844,130 @@ PENS
 "default" 0.9 1 -16777216 true "" ""
 
 CHOOSER
-20
-53
-192
-98
+11
+73
+124
+118
 allele-one-color
 allele-one-color
 "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
-0
+1
 
 CHOOSER
-20
-215
-192
-260
+10
+167
+123
+212
 allele-two-color
 allele-two-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
-6
-
-CHOOSER
-20
-376
-193
-421
-allele-three-color
-allele-three-color
 "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
 2
 
 CHOOSER
-20
-138
-192
-183
+11
+262
+124
+307
+allele-three-color
+allele-three-color
+"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
+3
+
+CHOOSER
+128
+73
+266
+118
 allele-one-dominance
 allele-one-dominance
+"dominant" "recessive"
+1
+
+CHOOSER
+127
+167
+266
+212
+allele-two-dominance
+allele-two-dominance
 "dominant" "recessive"
 0
 
 CHOOSER
-20
-301
-192
-346
-allele-two-dominance
-allele-two-dominance
+128
+262
+267
+307
+allele-three-dominance
+allele-three-dominance
+"dominant" "recessive"
+0
+
+SWITCH
+12
+320
+267
+353
+allele-four-on?
+allele-four-on?
+0
+1
+-1000
+
+CHOOSER
+12
+358
+125
+403
+allele-four-color
+allele-four-color
+"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
+0
+
+CHOOSER
+129
+358
+267
+403
+allele-four-dominance
+allele-four-dominance
 "dominant" "recessive"
 1
 
-CHOOSER
-21
-461
-193
-506
-allele-three-dominance
-allele-three-dominance
-"dominant" "recessive"
+SLIDER
+1251
+51
+1415
+84
+reproduce-every
+reproduce-every
+0
+100
+50.0
+10
+1
+ticks
+HORIZONTAL
+
+BUTTON
+1077
+51
+1243
+84
+reproduce continuously
+\nif ( ticks > 0 and ceiling ( ticks / reproduce-every ) = ticks / reproduce-every ) [\nset generation-number generation-number + 1\nask students [ execute-reproduce ]\nask students [ if ( length phenotype-population > population-size ) [foreach n-of (length phenotype-population - population-size) phenotype-population [ [?1] -> ask ?1 [remove-phenotype] ]]]\nupdate-allele-frequency-plot ]
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
 1
 
 @#$#@#$#@
-# Population Genetics 1.5.0
+# Population Genetics 2.0.0
 
 ## WHAT IS IT?
 
@@ -1028,6 +1036,12 @@ GENETIC DRIFT: Notice that there are no settings for genetic drift, the fourth m
 
 Use the model with the entire class to serve as an introduction to population genetics. Be sure to modify the EVOLUTION SETTINGS to simulate how different mechanisms can affect the allele frequencies and variation both within and between populations.
 
+1. Vary the POPULATION-SIZE to explore how genetic drift affects very large and very small populations.
+
+2. Change very large populations to very small populations to explore bottleneck or founder's effects.
+
+3. Increase the MUTATION-RATE to a non-zero number 
+
 ## POPULATION NAMES
 
 The names generated during ADD POPULATION are taken from Huerta-Sánchez, Rohlfs and collegues' work on revealing the hidden female contributions to population genetics:
@@ -1036,7 +1050,7 @@ Dung, S. K., López, A., Barragan, E. L., Reyes, R. J., Thu, R., Castellanos, E.
 
 ## COPYRIGHT AND LICENSE
 
- © 2020 K N Crouse
+© 2020 K N Crouse
 
 This model was created at the University of Minnesota as part of a series of models to illustrate principles in biological evolution.
 
@@ -1384,10 +1398,10 @@ NetLogo 6.1.1
 @#$#@#$#@
 @#$#@#$#@
 VIEW
-279
-10
-892
-621
+14
+234
+540
+784
 0
 0
 0
@@ -1406,10 +1420,10 @@ VIEW
 40
 
 BUTTON
-109
-133
-171
-166
+387
+17
+449
+50
 Up
 NIL
 NIL
@@ -1420,10 +1434,10 @@ NIL
 I
 
 BUTTON
-108
-199
-170
-232
+387
+112
+449
+145
 Down
 NIL
 NIL
@@ -1434,10 +1448,10 @@ NIL
 K
 
 BUTTON
-170
-166
-232
-199
+449
+64
+511
+97
 Right
 NIL
 NIL
@@ -1448,10 +1462,10 @@ NIL
 L
 
 BUTTON
-46
-166
-108
-199
+325
+64
+387
+97
 Left
 NIL
 NIL
@@ -1462,9 +1476,9 @@ NIL
 J
 
 MONITOR
-155
+177
 10
-262
+295
 59
 LOCATION
 NIL
@@ -1472,9 +1486,9 @@ NIL
 1
 
 MONITOR
-16
+14
 10
-151
+170
 59
 YOU ARE POPULATION
 NIL
@@ -1482,53 +1496,63 @@ NIL
 1
 
 MONITOR
-16
-67
-262
-116
+14
+63
+295
+112
 ADJACENT POPULATIONS
 NIL
 3
 1
 
 MONITOR
-290
-20
-385
-69
+25
+247
+120
+296
 GENERATION
 NIL
 3
 1
 
 TEXTBOX
-167
-665
-317
-683
+187
+795
+337
+813
 NIL
 11
 0.0
 1
 
 MONITOR
-15
-248
-262
-297
+14
+116
+295
+165
 ALLELE FREQUENCIES
 NIL
 3
 1
 
 MONITOR
-15
-304
-262
-353
+14
+172
+536
+221
 GENOTYPE FREQUENCIES
 NIL
 3
+1
+
+TEXTBOX
+556
+463
+579
+551
+NIL
+11
+0.0
 1
 
 @#$#@#$#@
