@@ -1,6 +1,7 @@
-  
+/code/.PopulationGenetics.tmp.nlogo
 .DS_Store
 codemeta.json
 /output/*
 /data/*
 /docs/*
+/old_code/*
