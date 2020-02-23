@@ -108,15 +108,17 @@ to create-organism-population
     set index index + 1
     if index = length allele-types [ set index 0 ]]
 
-  let item-index 0
   let parent self
   hatch-organisms population-size
   [
+    let item-index random length allele-type-list
     set first-allele initialize-allele item item-index allele-type-list
-    set item-index item-index + 1
+    set allele-type-list remove-item item-index allele-type-list
+    set item-index random length allele-type-list
     set second-allele initialize-allele item item-index allele-type-list
-    set item-index item-index + 1
+    set allele-type-list remove-item item-index allele-type-list
     set parent-population parent
+    set my-generation generation-number
     move-to parent-population move-to one-of patches in-radius ( population-radius * 0.75 )
     setup-organism
   ]
@@ -130,7 +132,6 @@ to setup-organism
   set-organism-shape-and-color
   set xcor xcor + random-float 1 - random-float 1
   set ycor ycor + random-float 1 - random-float 1
-  set my-generation generation-number + 1
 end
 
 ; set the shape and color of organism based on alleles
@@ -225,15 +226,22 @@ end
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 to go
+
+  ; HUBNET CLIENT
   listen-clients
+  ask populations with [ hubnet-client? = true ] [ send-info-to-clients ]
+
+  ; UPDATE STATE VARIABLES
   ask populations [ population-wander ]
-  ask populations [ set gene-flow-populations get-adjacent-populations ]
   ask organisms [ organism-wander ]
+  ask populations [ set gene-flow-populations get-adjacent-populations ]
+
+  ; UPDATE INTERFACE VISUALS
   update-visibility-settings
   update-organism-shape-and-color
   update-allele-types-list
-  ask populations with [ hubnet-client? = true ] [ send-info-to-clients ]
   ask alleles [ update-allele-color ]
+
   tick
 end
 
@@ -296,7 +304,7 @@ end
 
 ; population reproduces to maintain population carrying capacity set by POPULATION-SIZE
 to population-reproduce
-  while [count organisms with [ my-generation = generation-number + 1 and parent-population = myself ] < population-size]  [
+  while [count organisms with [ my-generation = generation-number + 1 and parent-population = myself ] < population-size ] [
     ask one-of organisms with [ my-generation = generation-number and parent-population = myself ] [ reproduce get-mate-in-gene-pool ]
   ]
 end
@@ -321,12 +329,13 @@ end
 
 ; organism command to create offspring from alleles of self and mate
 to reproduce [ mate ]
-  let number-of-offspring ifelse-value (read-from-string selection-on-phenotype = color) [( floor rate-of-selection ) + ifelse-value ( random-float 1.0 < ( rate-of-selection - floor rate-of-selection ) ) [ 1 ] [ 0 ]] [1] ; natural selection
+  let number-of-offspring ifelse-value (read-from-string selection-on-phenotype = color) [( floor rate-of-selection ) + ifelse-value ( random-float 1.0 < ( rate-of-selection - floor rate-of-selection ) ) [ 1 ] [ 0 ]] [ 1 ] ; natural selection
   let current-offspring-count 0
   while [ current-offspring-count < number-of-offspring and count organisms with [ my-generation = generation-number + 1 and parent-population = [parent-population] of myself ] < population-size ] [
     hatch-organisms 1 [
       set first-allele initialize-allele one-of (sentence [allele-type] of first-allele [allele-type] of second-allele )
       set second-allele initialize-allele one-of (sentence [allele-type] of [first-allele] of mate [allele-type] of [second-allele] of mate )
+        set my-generation generation-number + 1
       update-for-mutation
       setup-organism ]
     set current-offspring-count current-offspring-count + 1 ]
@@ -336,9 +345,9 @@ end
 to-report get-mate-in-gene-pool
   let mate-to-report nobody
   ifelse ( gene-flow-between-populations and [gene-flow-populations] of parent-population != no-turtles ) [
-    set mate-to-report one-of organisms with [ my-generation = generation-number and parent-population = [parent-population] of myself or member? parent-population [gene-flow-populations] of [parent-population] of myself ]
+    set mate-to-report one-of other organisms with [ my-generation = generation-number and parent-population = [parent-population] of myself or member? parent-population [gene-flow-populations] of [parent-population] of myself ]
   ][
-    set mate-to-report one-of organisms with [ my-generation = generation-number and parent-population = [parent-population] of myself ]
+    set mate-to-report one-of other organisms with [ my-generation = generation-number and parent-population = [parent-population] of myself ]
   ]
   report mate-to-report
 end
@@ -417,7 +426,7 @@ to send-info-to-clients
 
   let my-organisms organisms with [ parent-population = myself ]
   hubnet-send user-id "YOU ARE POPULATION" user-id
-  hubnet-send user-id "LOCATION" (word "(" pxcor "," pycor ")")
+  hubnet-send user-id "LOCATION" (word "(" pxcor ", " pycor ")")
   hubnet-send user-id "GENERATION" generation-number
 
   ; ADJACENT POPULATIONS
@@ -563,7 +572,7 @@ BUTTON
 10
 1175
 43
-reset
+setup
 setup
 NIL
 1
@@ -798,7 +807,7 @@ PLOT
 Proportion of Alleles Over Generations
 generation
 proportion of alleles
-0.0
+1.0
 10.0
 0.0
 1.0
@@ -808,7 +817,7 @@ false
 PENS
 "red" 0.01 1 -2674135 false "" ""
 "orange" 0.01 1 -955883 false "" ""
-"yellow" 0.01 1 -4079321 false "" ""
+"yellow" 0.01 1 -1184463 false "" ""
 "lime" 0.01 1 -13840069 false "" ""
 "turquoise" 0.01 1 -14835848 false "" ""
 "cyan" 0.01 1 -11221820 false "" ""
@@ -817,7 +826,7 @@ PENS
 "violet" 0.01 1 -8630108 false "" ""
 "magenta" 0.01 1 -5825686 false "" ""
 "pink" 0.01 1 -2064490 false "" ""
-"gray" 0.01 0 -7500403 true "" ""
+"gray" 0.01 1 -7500403 true "" ""
 
 PLOT
 1085
@@ -855,7 +864,7 @@ CHOOSER
 allele-two-color
 allele-two-color
 "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
-7
+1
 
 CHOOSER
 12
@@ -885,7 +894,7 @@ CHOOSER
 allele-two-dominance
 allele-two-dominance
 "dominant" "recessive"
-1
+0
 
 CHOOSER
 125
@@ -895,34 +904,34 @@ CHOOSER
 allele-three-dominance
 allele-three-dominance
 "dominant" "recessive"
-0
+1
 
 SWITCH
 12
-327
+326
 265
-360
+359
 allele-four-on?
 allele-four-on?
-1
+0
 1
 -1000
 
 CHOOSER
 12
-365
+364
 121
-410
+409
 allele-four-color
 allele-four-color
 "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
-1
+3
 
 CHOOSER
 125
-365
+364
 265
-410
+409
 allele-four-dominance
 allele-four-dominance
 "dominant" "recessive"
@@ -977,7 +986,7 @@ STARTUP: The HubNet Control Center should start upon opening this model. Change 
 
 INSTRUCTIONS FOR YOUR STUDENTS: Instruct your students to open the NetLogo HubNet Client application, type their user name, select this activity and press ENTER. Make sure that they choose the correct port number and server address for this simulation. Once they enter the simulation, a new fish population is created and assigned to them. Instruct your students to move their populations around to acquaint themselves with the interface. Instructors can also press the ADD POPULATION button to create another "non-playable" population in the world.
 
-SIMULATION: Press the REPRODUCE button to cause each population in the simulation to reproduce. Investigate how the allele frequencies have changed and instruct your students to record the specifics for their population as shown in their HubNet Client. Continue to press the REPRODUCE button and record how the EVOLUTION SETTINGS affect how the populations change over time. Modify the EVOLUTION SETTINGS as needed to change the environmental factors.
+SIMULATION: Press the REPRODUCE button to cause each population in the simulation to reproduce. Investigate how the allele frequencies have changed and instruct your students to record the specifics for their population as shown in their HubNet Client. Continue to press the REPRODUCE button and record how the EVOLUTION SETTINGS affect how the populations change over time. Modify the EVOLUTION SETTINGS as needed to change the mechanisms of evolution at play (see THINGS TO NOTICE and THINGS TO TRY below).
 
 ### STUDENT: HubNet Client
 
@@ -985,7 +994,7 @@ STARTUP: Students should open the NetLogo HubNet Client application, type their 
 
 After logging in, the client interface will appear for the students, and if GO is pressed in NetLogo they will be assigned a population of fish, which should appear on the interface. The YOU ARE POPULATION monitor displays the name entered upon startup and will also appear on the simulation to label the appropriate population. The current location of the population is shown in the LOCATION monitor.
 
-SIMULATION: Students are able to control the movement of their population with the UP, DOWN, LEFT, and RIGHT buttons. HubNet Client monitors show the current allele and genotype frequencies, as well as the current generation and closest adjacent populations.
+SIMULATION: Students are able to control the movement of their population with the UP, DOWN, LEFT, and RIGHT buttons. When GENE-FLOW-BETWEEN-POPULATIONS is ON, students can move their populations to enable fish from adjacent populations to reproduce with the fish from their population, and vice versa. HubNet Client monitors show the current allele and genotype frequencies, as well as the current generation and closest adjacent populations.
 
 ## HOW TO USE IT
 
@@ -1037,17 +1046,19 @@ PROPORTION OF ALLELES OVER GENERATIONS: shows the proportion of each allele type
 
 ## THINGS TO NOTICE
 
-MUTATION RATE: How does the MUTATION-RATE setting change the alleles? How does it change within population and between population variation?
+This model focuses on how the mechanisms of evolution (mutation, gene flow, natural selection, and genetic drift) affect between- and within-population genetic variation.
 
-GENE FLOW: How does the ALLOW-GENE-FLOW? setting change the alleles? How does it change within population and between population variation?
+MUTATION: How does the MUTATION-RATE setting affect the simulation? How does it change within population and between population genetic variation? Since mutation is adding novelle alleles to the population, we expect that setting a non-zero mutation rate will increase or maintain genetic variation both within a population and between populations.
 
-NATURAL SELECTION: How do the SELECTION-ON-PHENOTYPE and RATE-OF-SELECTION settings change the alleles? How do they change within population and between population variation?
+GENE FLOW: How does the GENE-FLOW-BETWEEN-POPULATIONS setting affect the simulation? How does it change within population and between population genetic variation? Since gene flow allows adjacent populations to "share" their alleles, we expect that when gene flow is turned ON, the within-population genetic variation will increase or be maintained at a high level, and between-population genetic variation will decrease or be maintained at a low level.
 
-GENETIC DRIFT: Notice that there are no settings for genetic drift, the fourth mechanism of evolution. Unlike the other mechanisms, genetic drift can never be turned off!
+NATURAL SELECTION: How do the SELECTION-ON-PHENOTYPE and RATE-OF-SELECTION settings affect the simulation? How do they change within population and between population genetic variation? If the selected color is present in the population, then we expect that a high rate ( > 1 ) of selection will increase the frequency of that allele and a low rate ( < 1 ) of selection will decrease the frequence of that allele in the population. Either scenario results in a decrease or low maintenance of within-population variation and an increase of high maintenance of between-population variation.
+
+GENETIC DRIFT: Notice that there are no settings for genetic drift, the fourth mechanism of evolution. Unlike the other mechanisms, genetic drift can never be turned off! Since genetic drift causes a change in allele frequencies due to chance, we expect that within-population variation will decrease or be maintained, and between-population variation will increase or be maintained. This effect is strongest at lower population sizes.
 
 ## THINGS TO TRY
 
-Use the model with students to serve as an introduction to population genetics. Be sure to modify the EVOLUTION SETTINGS to simulate how different mechanisms can affect the allele frequencies and variation both within and between populations.
+Use the model with students to serve as an introduction to population genetics. Be sure to modify the EVOLUTION SETTINGS to simulate how different mechanisms of evolution can affect the allele frequencies and variation both within and between populations.
 
 1. Vary the POPULATION-SIZE to explore how genetic drift affects very large and very small populations.
 
