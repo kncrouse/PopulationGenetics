@@ -34,11 +34,6 @@ alleles-own [
 ;:::::: Setup ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-to startup
-  hubnet-reset
-  setup
-end
-
 to setup
   clear-all-plots
   setup-parameters
@@ -90,6 +85,7 @@ to setup-population
   create-organism-population
   set label user-id
   set label-color black
+  update-interface-plots
 end
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -140,7 +136,7 @@ to set-organism-shape-and-color
   set shape "clown"
   if dominance = "recessive-dominant" [ set color [color] of second-allele ]
   if dominance = "dominant-recessive" [ set color [color] of first-allele ]
-  if dominance = "identical" [ set color [color] of first-allele ] ; this is techincally unnecessary and could be removed along with ... (*)
+  if dominance = "identical" [ set color [color] of first-allele ] ; this is technically unnecessary and could be removed along with ... (*)
   if dominance = "codominant" [
     set shape word "clown" word " " [color] of second-allele
     set color [color] of first-allele ]
@@ -426,8 +422,13 @@ to send-info-to-clients
 
   let my-organisms organisms with [ parent-population = myself ]
   hubnet-send user-id "YOU ARE POPULATION" user-id
-  hubnet-send user-id "LOCATION" (word "(" pxcor ", " pycor ")")
+  hubnet-send user-id "COORDINATES" (word "(" pxcor ", " pycor ")")
   hubnet-send user-id "GENERATION" generation-number
+
+  ; GRAPH POSITION
+  let graph-position position self sort populations + 1
+  let counting-graph-position (ifelse-value ( graph-position = 1 ) [ "1st" ] ( graph-position = 2 ) [ "2nd" ] ( graph-position = 2 ) [ "3rd" ] [ (word graph-position "th") ] ) ; this will not work for numbers > 20
+  hubnet-send user-id "HISTOGRAM POSITION" counting-graph-position
 
   ; ADJACENT POPULATIONS
   let adjacent-populations ""
@@ -464,7 +465,7 @@ end
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 to update-interface-plots
-  let color-list [ "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" ]
+  let color-list [ "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black" ]
 
   ; ALLELE VARIATION WITHIN POPULATION
   set-current-plot "Genetic Variation per Population"
@@ -506,7 +507,7 @@ to update-interface-plots
     set index index + 1 ]
 
   ; PROPORTION OF ALL ALLELES OVER GENERATIONS
-  set-current-plot "Proportion of Alleles Over Generations"
+  set-current-plot "Total Proportion of Alleles Over Generations"
   let allele-frequency-so-far count alleles
   foreach color-list [ clr ->
     if ( count alleles with [ get-allele-color-string allele-type = clr ] > 0 ) [
@@ -551,9 +552,9 @@ ticks
 30.0
 
 BUTTON
-1180
+1291
 10
-1287
+1419
 43
 NIL
 go
@@ -568,9 +569,9 @@ NIL
 1
 
 BUTTON
-1085
+1157
 10
-1175
+1284
 43
 setup
 setup
@@ -591,7 +592,7 @@ SWITCH
 574
 gene-flow-between-populations
 gene-flow-between-populations
-0
+1
 1
 -1000
 
@@ -604,7 +605,7 @@ mutation-rate
 mutation-rate
 0
 1.0
-0.01
+0.0
 .01
 1
 NIL
@@ -636,10 +637,10 @@ NIL
 HORIZONTAL
 
 SWITCH
-1085
-92
-1251
-125
+1082
+90
+1248
+123
 show-alleles
 show-alleles
 1
@@ -700,10 +701,10 @@ ALLELE SETTINGS
 1
 
 BUTTON
-1292
-10
-1423
-43
+1083
+49
+1177
+82
 reproduce
 execute-reproduce
 NIL
@@ -721,7 +722,7 @@ MONITOR
 24
 374
 69
-Generation
+generation
 generation-number
 17
 1
@@ -730,19 +731,19 @@ generation-number
 MONITOR
 949
 22
-1055
+1060
 67
-Total Population
+total population
 count organisms
 17
 1
 11
 
 BUTTON
-1259
-92
-1423
-125
+1256
+90
+1419
+123
 add population
 create-new-population
 NIL
@@ -771,11 +772,11 @@ NIL
 HORIZONTAL
 
 PLOT
-1085
-340
-1424
-535
-Proportion of Alleles per Population
+1083
+339
+1422
+534
+proportion of alleles per population
 population
 proportion of alleles
 0.0
@@ -798,16 +799,18 @@ PENS
 "magenta" 0.01 1 -5825686 true "" ""
 "pink" 0.01 1 -2064490 true "" ""
 "gray" 0.01 1 -7500403 true "" ""
+"white" 0.01 1 -262915 true "" ""
+"black" 0.01 1 -16777216 true "" ""
 
 PLOT
-1085
-545
-1424
-740
-Proportion of Alleles Over Generations
+1083
+544
+1422
+739
+total proportion of alleles over generations
 generation
 proportion of alleles
-1.0
+0.0
 10.0
 0.0
 1.0
@@ -827,15 +830,17 @@ PENS
 "magenta" 0.01 1 -5825686 false "" ""
 "pink" 0.01 1 -2064490 false "" ""
 "gray" 0.01 1 -7500403 true "" ""
+"white" 0.01 1 -262915 true "" ""
+"black" 0.01 1 -16777216 true "" ""
 
 PLOT
-1085
-136
-1423
-331
-Genetic Variation per Population
+1083
+135
+1421
+330
+genetic variation per population
 population
-Simpson's Diversity
+index of variation
 0.0
 6.0
 0.0
@@ -853,7 +858,7 @@ CHOOSER
 125
 allele-one-color
 allele-one-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
+"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
 0
 
 CHOOSER
@@ -863,7 +868,7 @@ CHOOSER
 219
 allele-two-color
 allele-two-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
+"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
 1
 
 CHOOSER
@@ -873,7 +878,7 @@ CHOOSER
 313
 allele-three-color
 allele-three-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
+"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
 2
 
 CHOOSER
@@ -894,7 +899,7 @@ CHOOSER
 allele-two-dominance
 allele-two-dominance
 "dominant" "recessive"
-0
+1
 
 CHOOSER
 125
@@ -904,7 +909,7 @@ CHOOSER
 allele-three-dominance
 allele-three-dominance
 "dominant" "recessive"
-1
+0
 
 SWITCH
 12
@@ -924,7 +929,7 @@ CHOOSER
 409
 allele-four-color
 allele-four-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray"
+"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
 3
 
 CHOOSER
@@ -938,27 +943,27 @@ allele-four-dominance
 1
 
 SLIDER
-1259
-51
-1423
-84
-reproduce-every
-reproduce-every
-0
+1313
+49
+1419
+82
+...every
+...every
+10
 100
-50.0
+30.0
 10
 1
 ticks
 HORIZONTAL
 
 BUTTON
-1085
-51
-1251
-84
-reproduce continuously
-if ( ticks > 0 and ceiling ( ticks / reproduce-every ) = ticks / reproduce-every ) [\nexecute-reproduce\n]
+1182
+49
+1309
+82
+reproduce...
+if ( ticks > 0 and ceiling ( ticks / ...every ) = ticks / ...every ) [\nexecute-reproduce\n]
 T
 1
 T
@@ -969,68 +974,94 @@ NIL
 NIL
 1
 
+BUTTON
+1083
+10
+1151
+43
+HubNet
+hubnet-reset
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
 @#$#@#$#@
-# Population Genetics 2.0.0
+# Population Genetics 2.1.0
 
 ## WHAT IS IT?
 
-This model simulates how the mechanisms of biological evolution shape emergent evolutionary patterns - how allele frequencies change in a population over time. Patterns in between- and within-population variation are expected to emerge in the simulation in correspondance with the parameter settings, which determine how the mechanisms of evolution (genetic drift, gene flow, mutation, and natural selection) operate.
+This model simulates how the mechanisms of biological evolution (genetic drift, gene flow, mutation, and natural selection) shape emergent evolutionary patterns. That is, how allele frequencies change in a population over generations and shape patterns of between- and within-population variation.
 
-During a simulation, "students" control populations of fish organisms via a HubNet Client and a "teacher" controls the environment via the HubNet Control Center. Teachers can set up to four alleles at the locus coding for fish color. A fish color phenotype is based on its genotype and the allele relationship parameter settings (i.e. dominant or recessive). The user interface plots show how the allele frequencies within and between populations change over generations.
+During a simulation, "students" control populations of fish via a HubNet Client and a "teacher" controls the environment via the HubNet Control Center. Teachers can set up to four alleles at the locus coding for color. A fish's color phenotype is based on its genotype and the allele relationship set by parameters (i.e. dominant or recessive). The plots in the user interface show how the allele frequencies within and between populations change over generations.
 
 ## HOW IT WORKS
 
-### TEACHER: HubNet Control Center
+### HubNet for Teachers: HubNet Control Center
 
-STARTUP: The HubNet Control Center should start upon opening this model. Change any of the paramater settings depending on what aspect of evolution you want to simulate. Press the GO button.
+STARTUP: Click on the HUBNET button to start the HubNet Control Center. Change any of the paramater settings depending on what aspect of evolution you want to simulate. Press the SETUP and GO buttons.
 
-INSTRUCTIONS FOR YOUR STUDENTS: Instruct your students to open the NetLogo HubNet Client application, type their user name, select this activity and press ENTER. Make sure that they choose the correct port number and server address for this simulation. Once they enter the simulation, a new fish population is created and assigned to them. Instruct your students to move their populations around to acquaint themselves with the interface. Instructors can also press the ADD POPULATION button to create another "non-playable" population in the world.
+INSTRUCTIONS FOR YOUR STUDENTS: Instruct your students to open the NetLogo HubNet Client application, type their preferred user name, select this activity and press ENTER. Make sure that they choose the correct port number and server address for this simulation, which are shown in the HubNet Client. Upon enetering the simulation, a new fish population is created and assigned to them. Instruct your students to move their populations around to acquaint themselves with the interface. Instructors can also press the ADD POPULATION button to create another "non-playable" population in the world.
 
-SIMULATION: Press the REPRODUCE button to cause each population in the simulation to reproduce. Investigate how the allele frequencies have changed and instruct your students to record the specifics for their population as shown in their HubNet Client. Continue to press the REPRODUCE button and record how the EVOLUTION SETTINGS affect how the populations change over time. Modify the EVOLUTION SETTINGS as needed to change the mechanisms of evolution at play (see THINGS TO NOTICE and THINGS TO TRY below).
+SIMULATION: Press the REPRODUCE button and the fish in each population will reproduce and die, thus propagating the next generation. Investigate how the allele frequencies have changed from the previous generation to this new generation and instruct your students to record the specifics changes for their population as shown in their HubNet Client. Continue to press the REPRODUCE button and discuss with your students how the EVOLUTION SETTINGS affect the evolution of fish populations over generations. You can modify the EVOLUTION SETTINGS to change the mechanisms of evolution at play (see THINGS TO NOTICE and THINGS TO TRY below for more information).
 
-### STUDENT: HubNet Client
+### HubNet for Students: HubNet Client
 
-STARTUP: Students should open the NetLogo HubNet Client application, type their user name, select this activity and press ENTER. Make sure to choose the correct port number and server address for this simulation.
+STARTUP: Students should open the NetLogo HubNet Client application, type their user name, select this activity and press ENTER. Make sure to choose the correct port number and server address for this simulation. Additionally, make sure that the version number for the HubNet Client and NetLogo applications match (current version is 6.1.1).
 
-After logging in, the client interface will appear for the students, and if GO is pressed in NetLogo they will be assigned a population of fish, which should appear on the interface. The YOU ARE POPULATION monitor displays the name entered upon startup and will also appear on the simulation to label the appropriate population. The current location of the population is shown in the LOCATION monitor.
+After logging in, the client interface will appear for the students, and if GO is pressed they will be assigned a population of fish, which should appear on the interface. The YOU ARE POPULATION monitor displays the name entered upon startup and will also appear on the simulation to label the appropriate population. The current location of the population is shown in the COORDINATES monitor.
 
-SIMULATION: Students are able to control the movement of their population with the UP, DOWN, LEFT, and RIGHT buttons. When GENE-FLOW-BETWEEN-POPULATIONS is ON, students can move their populations to enable fish from adjacent populations to reproduce with the fish from their population, and vice versa. HubNet Client monitors show the current allele and genotype frequencies, as well as the current generation and closest adjacent populations.
+SIMULATION: Students are able to control the movement of their population with the UP, DOWN, LEFT, and RIGHT buttons. When GENE-FLOW-BETWEEN-POPULATIONS is ON, students can move their populations to enable fish from adjacent populations to reproduce with the fish from their population, and vice versa. HubNet Client monitors show the current allele and genotype frequencies, as well as the current GENERATION and closest ADJACENT POPULATIONS.
+
+### Outside of the Classroom
+
+This model was built for classrooms using HubNet, but individual users can also simulate fish populations without using HubNet. Click ADD POPULATION to add new fish populations that are not connected to a HubNet Client. These populations wander about the environment randomly and reproduce at each generation. Change the parameter settings to investigate how these populations evolve over time. If you still want to investigate the details of a single population, click HUBNET and then within the HubNet popup window click LOCAL to start a HubNet Client locally. You can use this interface the same as described for students above.
+
 
 ## HOW TO USE IT
 
 ### GENERAL
 
-SETUP: returns the model to the starting state.
+HUBNET: press to begin or restart using the HubNet controls.
+
+SETUP: initializes the model or returns the model to the starting state.
 
 GO: runs the simulation.
 
 REPRODUCE: all fish organisms reproduce with someone else in their gene pool.
 
-REPRODUCE CONTINUOUSLY: when pressed, executes the reproduce function at a time interval determined by REPRODUCE-EVERY slider. 
+REPRODUCE...: when pressed, executes the reproduce function at a time interval determined by ...EVERY slider. 
 
 SHOW-ALLELES: when on, the alleles of the population are shown, otherwise the individual fish are shown, the phenotypes of which are based on the allele dominance parameter settings.
 
-ADD POPULATION: when pressed, a new "non-playable" fish population is added to the world. It wanders randomly and its fish organisms can reproduce and share alleles with adjacent populations.
+ADD POPULATION: when pressed, a new "non-playable" fish population is added to the world. It wanders randomly and its fish organisms can reproduce and share alleles with any adjacent populations.
 
 ### ALLELE SETTINGS
 
-ALLELE-X-ON?: allows the given allele type to possiblely exist in the enivornment.
+ALLELE-ONE-ON?: enables allele one to appear in the enivornment.
 
-ALLELE-X-COLOR: parameter setting determines what color this allele appears as.
+ALLELE-ONE-COLOR: parameter setting determines what color allele one appears as.
 
-ALLELE-X-DOMINANCE: parameter setting determines whether allele is dominant or recessive.
+ALLELE-ONE-DOMINANCE: parameter setting determines whether allele one is dominant or recessive.
+
+These settings also apply for alleles two, three, and four.
 
 ### EVOLUTION SETTINGS
 
 POPULATION-SIZE: the current size of each population, which can be thought of as a fixed carrying capacity.
 
-MUTATION-RATE: the rate at which alleles mutate to a random allele upon reproduction.
+MUTATION-RATE: the rate at which the alleles at the color locus mutate to a random allele during reproduction.
 
-GENE-FLOW-BETWEEN-POPULATIONS: when on, allows populations that are close enough to an ADJACENT POPULATION to share alleles upon reproduction.
+GENE-FLOW-BETWEEN-POPULATIONS: when on, allows populations that are close enough to an ADJACENT POPULATION to share alleles during reproduction.
 
 SELECTION-ON-PHENOTYPE: selects the phenotype color that natural selection can act upon during the simulation.
 
-RATE-OF-SELECTION: for a phenotype that matches the currently set SELECTION-ON-PHENOTYPE this sets the average number of offspring that phenotype will have when they reproduce.
+RATE-OF-SELECTION: for a phenotype that matches the currently set SELECTION-ON-PHENOTYPE this sets the average number of offspring that phenotype will produce during reproduction.
 
 ### MONITORS & PLOTS
 
@@ -1038,27 +1069,29 @@ GENERATION: the current generation of the populations in the simulation.
 
 TOTAL POPULATION: the number of phenotypes from all populations in the simulation.
 
-GENETIC VARIATION PER POPULATION: each bar represents a population's calculation of Simpson's Diversity on allele types.
+GENETIC VARIATION PER POPULATION: each bar of this histogram represents a population's index of variation for allele types, which is calculated usings Simpson's diversity.
 
-PROPORTION OF ALLELES PER POPULATION: each bar represents a population broken into sections of color to represent the proportionate amount of each allele type.
+PROPORTION OF ALLELES PER POPULATION: each bar of this histogram represents a population broken into sections of color to represent the proportion of each allele type.
 
-PROPORTION OF ALLELES OVER GENERATIONS: shows the proportion of each allele type for each generation that the simulation has produced.
+PROPORTION OF ALLELES OVER GENERATIONS: shows the proportion of each allele type for each generation of the simulation.
 
 ## THINGS TO NOTICE
 
-This model focuses on how the mechanisms of evolution (mutation, gene flow, natural selection, and genetic drift) affect between- and within-population genetic variation.
+GENOTYPE & PHENOTYPE: Click between ON and OFF on the SHOW-ALLELES switch, which alternates the interface between showing the fish and its alleles. Each fish has two alleles, which together are the fish's genotype and code for the color of the fish. The physical expression of its genotype, which is called the fish's phenotype, is the color it actually displays.
 
-MUTATION: How does the MUTATION-RATE setting affect the simulation? How does it change within population and between population genetic variation? Since mutation is adding novelle alleles to the population, we expect that setting a non-zero mutation rate will increase or maintain genetic variation both within a population and between populations.
+GENETIC VARIATION: This model focuses on how the mechanisms of evolution (mutation, gene flow, natural selection, and genetic drift) affect between- and within-population genetic variation. The index of variation numerically shows within-population variation in the GENETIC VARIATION PER POPULATION histogram; higher numbers show more within-population variation and lower numbers or 0 show less or no variation. We can also note within-population visually; populations with high within-population variation have multiple alleles represented and populations with low within-population variation have only one or two alleles present. Use the PROPORTION OF ALLELES PER POPULATION plot to note between-group variation by comparing the allele frequencies across populations; similar allele proportions indicate lower between-population variation and populations with noticeably different proportions or completely different allele types represented indicate high between-population variation.
 
-GENE FLOW: How does the GENE-FLOW-BETWEEN-POPULATIONS setting affect the simulation? How does it change within population and between population genetic variation? Since gene flow allows adjacent populations to "share" their alleles, we expect that when gene flow is turned ON, the within-population genetic variation will increase or be maintained at a high level, and between-population genetic variation will decrease or be maintained at a low level.
+MUTATION: How does the MUTATION-RATE setting affect the simulation? How does it change within-population and between-population genetic variation? Since mutation potentially adds novelle alleles to the population, we expect that setting a non-zero mutation rate will increase or maintain genetic variation both within a population and between populations.
 
-NATURAL SELECTION: How do the SELECTION-ON-PHENOTYPE and RATE-OF-SELECTION settings affect the simulation? How do they change within population and between population genetic variation? If the selected color is present in the population, then we expect that a high rate ( > 1 ) of selection will increase the frequency of that allele and a low rate ( < 1 ) of selection will decrease the frequence of that allele in the population. Either scenario results in a decrease or low maintenance of within-population variation and an increase of high maintenance of between-population variation.
+GENE FLOW: How does the GENE-FLOW-BETWEEN-POPULATIONS setting affect the simulation? When this switch is turned ON, how does it change within-population and between-population genetic variation? Since gene flow allows adjacent populations to "share" their alleles, we expect that when gene flow is turned ON, the within-population genetic variation will increase or be maintained at a high level, and between-population genetic variation will decrease or be maintained at a low level.
 
-GENETIC DRIFT: Notice that there are no settings for genetic drift, the fourth mechanism of evolution. Unlike the other mechanisms, genetic drift can never be turned off! Since genetic drift causes a change in allele frequencies due to chance, we expect that within-population variation will decrease or be maintained, and between-population variation will increase or be maintained. This effect is strongest at lower population sizes.
+NATURAL SELECTION: How do the SELECTION-ON-PHENOTYPE and RATE-OF-SELECTION settings affect the simulation? How do they change within-population and between-population genetic variation? If the selected color is present in the population, then we expect that a high rate ( > 1 ) of selection will increase the frequency of that allele and a low rate ( < 1 ) of selection will decrease the frequence of that allele in the population. Either scenario results in a decrease or low maintenance of within-population variation and an increase of high maintenance of between-population variation.
+
+GENETIC DRIFT: Notice that there are no settings for genetic drift, the fourth mechanism of evolution. Unlike the other mechanisms, genetic drift can never be turned off! Since genetic drift causes a change in allele frequencies due to chance, we expect that within-population variation will decrease or be maintained, and between-population variation will increase or be maintained. This effect is strongest at lower population sizes and does not have as much of an effect on larger populations.
 
 ## THINGS TO TRY
 
-Use the model with students to serve as an introduction to population genetics. Be sure to modify the EVOLUTION SETTINGS to simulate how different mechanisms of evolution can affect the allele frequencies and variation both within and between populations.
+Use the model to serve as an introduction to population genetics. Be sure to modify the EVOLUTION SETTINGS to simulate how different mechanisms of evolution can affect the allele frequencies and variation both within and between populations.
 
 1. Vary the POPULATION-SIZE to explore how genetic drift affects very large and very small populations.
 
@@ -1066,9 +1099,9 @@ Use the model with students to serve as an introduction to population genetics. 
 
 3. Increase the MUTATION-RATE to a non-zero number to see how novelle mutations invade a population (or don't).
 
-4. Turn on GENE-FLOW-BETWEEN-POPULATIONS and move populations within range of each other to see how populations share alleles during reproduction.
+4. Turn on GENE-FLOW-BETWEEN-POPULATIONS and move populations within range of each other to see how populations can share alleles during reproduction.
 
-5. Use SELECTION-ON-PHENOTYPE to choose a color that environmental selective pressures are acting on and move the slider RATE-OF-SELECTION to a value higher than one if the selective pressures favor this phenotype, and to a value lower than one if the selective pressures do not favor this phenotype. Observe how your choices affect the prevalance of that allele over generations.
+5. Use SELECTION-ON-PHENOTYPE to choose a color that the environmental selective pressures are acting on and move the slider RATE-OF-SELECTION to a value higher than one if the selective pressures favor this phenotype, and to a value lower than one if the selective pressures do not favor this phenotype. Observe how your choices affect the prevalance of that allele over generations.
 
 ## POPULATION NAMES
 
@@ -1078,7 +1111,7 @@ Dung, S. K., López, A., Barragan, E. L., Reyes, R. J., Thu, R., Castellanos, E.
 
 ## HOW TO CITE
 
-Crouse, Kristin (2020). “Population Genetics” (Version 2.0.0). CoMSES Computational Model Library. Retrieved from: https://www.comses.net/codebases/6040/releases/2.0.0/
+Crouse, Kristin (2020). “Population Genetics” (Version 2.1.0). CoMSES Computational Model Library. Retrieved from: https://www.comses.net/codebases/6040/releases/2.1.0/
 
 ## COPYRIGHT AND LICENSE
 
@@ -1116,6 +1149,26 @@ Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
 Line -16777216 false 226 102 158 95
 Line -16777216 false 171 208 225 205
 Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
+
+clown 0
+false
+0
+Polygon -7500403 true true 137 105 124 83 103 76 77 75 53 104 47 136
+Polygon -7500403 true true 226 194 223 229 207 243 178 237 169 203 167 175
+Polygon -7500403 true true 137 195 124 217 103 224 77 225 53 196 47 164
+Polygon -7500403 true true 40 123 32 109 16 108 0 130 0 151 7 182 23 190 40 179 47 145
+Polygon -7500403 true true 45 120 90 105 195 90 275 120 294 152 285 165 293 171 270 195 210 210 150 210 45 180
+Circle -1 true false 244 128 26
+Circle -16777216 true false 248 135 14
+Line -16777216 false 48 121 133 96
+Line -16777216 false 48 179 133 204
+Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
+Line -16777216 false 226 102 158 95
+Line -16777216 false 171 208 225 205
+Polygon -16777216 true false 252 111 232 103 213 132 210 165 223 193 229 204 247 201 237 170 236 137
+Polygon -16777216 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
+Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
+Polygon -16777216 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
 
 clown 105
 false
@@ -1377,6 +1430,26 @@ Polygon -11221820 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 
 Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
 Polygon -11221820 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
 
+clown 9.9
+false
+0
+Polygon -7500403 true true 137 105 124 83 103 76 77 75 53 104 47 136
+Polygon -7500403 true true 226 194 223 229 207 243 178 237 169 203 167 175
+Polygon -7500403 true true 137 195 124 217 103 224 77 225 53 196 47 164
+Polygon -7500403 true true 40 123 32 109 16 108 0 130 0 151 7 182 23 190 40 179 47 145
+Polygon -7500403 true true 45 120 90 105 195 90 275 120 294 152 285 165 293 171 270 195 210 210 150 210 45 180
+Circle -1 true false 244 128 26
+Circle -16777216 true false 248 135 14
+Line -16777216 false 48 121 133 96
+Line -16777216 false 48 179 133 204
+Polygon -7500403 true true 241 106 241 77 217 71 190 75 167 99 182 125
+Line -16777216 false 226 102 158 95
+Line -16777216 false 171 208 225 205
+Polygon -1 true false 252 111 232 103 213 132 210 165 223 193 229 204 247 201 237 170 236 137
+Polygon -1 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
+Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
+Polygon -1 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
+
 clown 95
 false
 0
@@ -1396,33 +1469,6 @@ Polygon -13791810 true false 252 111 232 103 213 132 210 165 223 193 229 204 247
 Polygon -13791810 true false 135 98 140 137 135 204 154 210 167 209 170 176 160 156 163 126 171 117 156 96
 Polygon -16777216 true false 192 117 171 118 162 126 158 148 160 165 168 175 188 183 211 186 217 185 206 181 172 171 164 156 166 133 174 121
 Polygon -13791810 true false 40 121 46 147 42 163 37 179 56 178 65 159 67 128 59 116
-
-fish
-false
-0
-Polygon -1 true false 44 131 21 87 15 86 0 120 15 150 0 180 13 214 20 212 45 166
-Polygon -1 true false 135 195 119 235 95 218 76 210 46 204 60 165
-Polygon -1 true false 75 45 83 77 71 103 86 114 166 78 135 60
-Polygon -7500403 true true 30 136 151 77 226 81 280 119 292 146 292 160 287 170 270 195 195 210 151 212 30 166
-Circle -16777216 true false 215 106 30
-
-fish 2
-false
-0
-Polygon -1 true false 56 133 34 127 12 105 21 126 23 146 16 163 10 194 32 177 55 173
-Polygon -7500403 true true 156 229 118 242 67 248 37 248 51 222 49 168
-Polygon -7500403 true true 30 60 45 75 60 105 50 136 150 53 89 56
-Polygon -7500403 true true 50 132 146 52 241 72 268 119 291 147 271 156 291 164 264 208 211 239 148 231 48 177
-Circle -1 true false 237 116 30
-Circle -16777216 true false 241 127 12
-Polygon -1 true false 159 228 160 294 182 281 206 236
-Polygon -7500403 true true 102 189 109 203
-Polygon -1 true false 215 182 181 192 171 177 169 164 152 142 154 123 170 119 223 163
-Line -16777216 false 240 77 162 71
-Line -16777216 false 164 71 98 78
-Line -16777216 false 96 79 62 105
-Line -16777216 false 50 179 88 217
-Line -16777216 false 88 217 149 230
 @#$#@#$#@
 NetLogo 6.1.1
 @#$#@#$#@
@@ -1452,10 +1498,10 @@ VIEW
 40
 
 BUTTON
-387
-17
-449
-50
+399
+24
+461
+57
 Up
 NIL
 NIL
@@ -1466,10 +1512,10 @@ NIL
 I
 
 BUTTON
-387
-112
-449
-145
+399
+119
+461
+152
 Down
 NIL
 NIL
@@ -1480,10 +1526,10 @@ NIL
 K
 
 BUTTON
-449
-64
-511
-97
+461
+71
+523
+104
 Right
 NIL
 NIL
@@ -1494,10 +1540,10 @@ NIL
 L
 
 BUTTON
-325
-64
-387
-97
+337
+71
+399
+104
 Left
 NIL
 NIL
@@ -1508,11 +1554,11 @@ NIL
 J
 
 MONITOR
-177
-10
-295
-59
-LOCATION
+218
+65
+311
+114
+COORDINATES
 NIL
 3
 1
@@ -1520,7 +1566,7 @@ NIL
 MONITOR
 14
 10
-170
+176
 59
 YOU ARE POPULATION
 NIL
@@ -1529,9 +1575,9 @@ NIL
 
 MONITOR
 14
-64
-295
-113
+65
+212
+114
 ADJACENT POPULATIONS
 NIL
 3
@@ -1559,9 +1605,9 @@ NIL
 
 MONITOR
 14
-118
-295
-167
+120
+311
+169
 ALLELE FREQUENCIES
 NIL
 3
@@ -1569,9 +1615,9 @@ NIL
 
 MONITOR
 14
-172
+175
 536
-221
+224
 GENOTYPE FREQUENCIES
 NIL
 3
@@ -1585,6 +1631,16 @@ TEXTBOX
 NIL
 11
 0.0
+1
+
+MONITOR
+181
+10
+311
+59
+HISTOGRAM POSITION
+NIL
+0
 1
 
 @#$#@#$#@
