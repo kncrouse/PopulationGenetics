@@ -465,7 +465,7 @@ end
 ;:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 to update-interface-plots
-  let color-list [ "red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black" ]
+  let color-list [ "red" "orange" "yellow" "lime" "green" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black" ]
 
   ; ALLELE VARIATION WITHIN POPULATION
   set-current-plot "Genetic Variation per Population"
@@ -790,6 +790,7 @@ PENS
 "red" 0.01 1 -2674135 false "" ""
 "orange" 0.01 1 -955883 true "" ""
 "yellow" 0.01 1 -1184463 true "" ""
+"green" 0.01 1 -10899396 true "" ""
 "lime" 0.01 1 -13840069 true "" ""
 "turquoise" 0.01 1 -14835848 true "" ""
 "cyan" 0.01 1 -11221820 true "" ""
@@ -799,7 +800,7 @@ PENS
 "magenta" 0.01 1 -5825686 true "" ""
 "pink" 0.01 1 -2064490 true "" ""
 "gray" 0.01 1 -7500403 true "" ""
-"white" 0.01 1 -262915 true "" ""
+"white" 0.01 1 -1 true "" ""
 "black" 0.01 1 -16777216 true "" ""
 
 PLOT
@@ -821,6 +822,7 @@ PENS
 "red" 0.01 1 -2674135 false "" ""
 "orange" 0.01 1 -955883 false "" ""
 "yellow" 0.01 1 -1184463 false "" ""
+"green" 0.01 1 -10899396 false "" ""
 "lime" 0.01 1 -13840069 false "" ""
 "turquoise" 0.01 1 -14835848 false "" ""
 "cyan" 0.01 1 -11221820 false "" ""
@@ -828,9 +830,9 @@ PENS
 "blue" 0.01 1 -13345367 false "" ""
 "violet" 0.01 1 -8630108 false "" ""
 "magenta" 0.01 1 -5825686 false "" ""
-"pink" 0.01 1 -2064490 false "" ""
+"pink" 0.01 1 -2064490 true "" ""
 "gray" 0.01 1 -7500403 true "" ""
-"white" 0.01 1 -262915 true "" ""
+"white" 0.01 1 -1 true "" ""
 "black" 0.01 1 -16777216 true "" ""
 
 PLOT
@@ -858,7 +860,7 @@ CHOOSER
 125
 allele-one-color
 allele-one-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
+"red" "orange" "yellow" "green" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
 0
 
 CHOOSER
@@ -868,7 +870,7 @@ CHOOSER
 219
 allele-two-color
 allele-two-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
+"red" "orange" "yellow" "green" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
 1
 
 CHOOSER
@@ -878,7 +880,7 @@ CHOOSER
 313
 allele-three-color
 allele-three-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
+"red" "orange" "yellow" "green" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
 2
 
 CHOOSER
@@ -929,8 +931,8 @@ CHOOSER
 409
 allele-four-color
 allele-four-color
-"red" "orange" "yellow" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
-3
+"red" "orange" "yellow" "green" "lime" "turquoise" "cyan" "sky" "blue" "violet" "magenta" "pink" "gray" "white" "black"
+4
 
 CHOOSER
 125
@@ -951,7 +953,7 @@ SLIDER
 ...every
 10
 100
-30.0
+50.0
 10
 1
 ticks
@@ -994,6 +996,8 @@ NIL
 @#$#@#$#@
 # Population Genetics 2.1.0
 
+#### Created with NetLogo 6.1.1
+
 ## WHAT IS IT?
 
 This model simulates how the mechanisms of biological evolution (genetic drift, gene flow, mutation, and natural selection) shape emergent evolutionary patterns. That is, how allele frequencies change in a population over generations and shape patterns of between- and within-population variation.
@@ -1001,6 +1005,8 @@ This model simulates how the mechanisms of biological evolution (genetic drift, 
 During a simulation, "students" control populations of fish via a HubNet Client and a "teacher" controls the environment via the HubNet Control Center. Teachers can set up to four alleles at the locus coding for color. A fish's color phenotype is based on its genotype and the allele relationship set by parameters (i.e. dominant or recessive). The plots in the user interface show how the allele frequencies within and between populations change over generations.
 
 ## HOW IT WORKS
+
+Click the SETUP button to start a new simulation and GO to get the simulation running. At this point, you should only see a blue screen - you have to manually add populations of fish in order to see anything interesting! You can add fish populations in two ways: (2) click the HUBNET button to create user-controlled populations or (1) click the ADD POPULATION button to create non-controlled populations. You can find more detailed instructions for these two options below. Once you have added your populations, click the REPRODUCE button to populate the world with a new generation of fish. Each new generation inherits alleles from the previous generation depending on the EVOLUTION SETTINGS. Once a new generation is born, the old generation dies.
 
 ### HubNet for Teachers: HubNet Control Center
 
@@ -1021,7 +1027,6 @@ SIMULATION: Students are able to control the movement of their population with t
 ### Outside of the Classroom
 
 This model was built for classrooms using HubNet, but individual users can also simulate fish populations without using HubNet. Click ADD POPULATION to add new fish populations that are not connected to a HubNet Client. These populations wander about the environment randomly and reproduce at each generation. Change the parameter settings to investigate how these populations evolve over time. If you still want to investigate the details of a single population, click HUBNET and then within the HubNet popup window click LOCAL to start a HubNet Client locally. You can use this interface the same as described for students above.
-
 
 ## HOW TO USE IT
 
@@ -1045,7 +1050,7 @@ ADD POPULATION: when pressed, a new "non-playable" fish population is added to t
 
 ALLELE-ONE-ON?: enables allele one to appear in the enivornment.
 
-ALLELE-ONE-COLOR: parameter setting determines what color allele one appears as.
+ALLELE-ONE-COLOR: determines what color allele one represents.
 
 ALLELE-ONE-DOMINANCE: parameter setting determines whether allele one is dominant or recessive.
 
@@ -1055,11 +1060,11 @@ These settings also apply for alleles two, three, and four.
 
 POPULATION-SIZE: the current size of each population, which can be thought of as a fixed carrying capacity.
 
-MUTATION-RATE: the rate at which the alleles at the color locus mutate to a random allele during reproduction.
+MUTATION-RATE: the rate at which the alleles at the color locus mutate to a random allele during reproduction. For example, a red allele could randomly mutate into a blue allele.
 
-GENE-FLOW-BETWEEN-POPULATIONS: when on, allows populations that are close enough to an ADJACENT POPULATION to share alleles during reproduction.
+GENE-FLOW-BETWEEN-POPULATIONS: when ON, allows populations that are close enough to an ADJACENT POPULATION to share alleles during reproduction.
 
-SELECTION-ON-PHENOTYPE: selects the phenotype color that natural selection can act upon during the simulation.
+SELECTION-ON-PHENOTYPE: selects the phenotype color that natural selection acts upon during the simulation.
 
 RATE-OF-SELECTION: for a phenotype that matches the currently set SELECTION-ON-PHENOTYPE this sets the average number of offspring that phenotype will produce during reproduction.
 
@@ -1077,9 +1082,11 @@ PROPORTION OF ALLELES OVER GENERATIONS: shows the proportion of each allele type
 
 ## THINGS TO NOTICE
 
-GENOTYPE & PHENOTYPE: Click between ON and OFF on the SHOW-ALLELES switch, which alternates the interface between showing the fish and its alleles. Each fish has two alleles, which together are the fish's genotype and code for the color of the fish. The physical expression of its genotype, which is called the fish's phenotype, is the color it actually displays.
+GENOTYPE & PHENOTYPE: Click between ON and OFF on the SHOW-ALLELES switch, which alternates the interface between showing the fish and its alleles. Each fish has two alleles that code for color, which together make up the fish's genotype for color. The physical expression of its genotype, which is called the fish's phenotype, is the color the fish actually displays. 
 
-GENETIC VARIATION: This model focuses on how the mechanisms of evolution (mutation, gene flow, natural selection, and genetic drift) affect between- and within-population genetic variation. The index of variation numerically shows within-population variation in the GENETIC VARIATION PER POPULATION histogram; higher numbers show more within-population variation and lower numbers or 0 show less or no variation. We can also note within-population visually; populations with high within-population variation have multiple alleles represented and populations with low within-population variation have only one or two alleles present. Use the PROPORTION OF ALLELES PER POPULATION plot to note between-group variation by comparing the allele frequencies across populations; similar allele proportions indicate lower between-population variation and populations with noticeably different proportions or completely different allele types represented indicate high between-population variation.
+ALLELE DOMINANCE: Notice how the DOMINANCE (dominant or recessive) settings of the alleles affect what color(s) appear in each fish's phenotype. For example if a fish has a dominant and a recessive allele, only the dominant allele will be shown in its coloration. However, if both alleles are dominant, they can be considered co-dominant alleles and both colors are displayed in the fish's phenotype. Likewise, two recessive alleles are co-dominant with each other.
+
+GENETIC VARIATION: This model focuses on how the mechanisms of evolution (mutation, gene flow, natural selection, and genetic drift) affect between- and within-population genetic variation. The index of variation numerically shows within-population variation in the GENETIC VARIATION PER POPULATION histogram; higher numbers show more within-population variation and lower numbers show less or no variation. We can also note within-population visually; populations with high within-population variation have multiple alleles represented and populations with low within-population variation have only one or two alleles present. Use the PROPORTION OF ALLELES PER POPULATION plot to note between-group variation by comparing the allele frequencies across populations; similar allele proportions indicate lower between-population variation and populations with noticeably different proportions or completely different allele types represented indicate high between-population variation.
 
 MUTATION: How does the MUTATION-RATE setting affect the simulation? How does it change within-population and between-population genetic variation? Since mutation potentially adds novelle alleles to the population, we expect that setting a non-zero mutation rate will increase or maintain genetic variation both within a population and between populations.
 
@@ -1091,21 +1098,21 @@ GENETIC DRIFT: Notice that there are no settings for genetic drift, the fourth m
 
 ## THINGS TO TRY
 
-Use the model to serve as an introduction to population genetics. Be sure to modify the EVOLUTION SETTINGS to simulate how different mechanisms of evolution can affect the allele frequencies and variation both within and between populations.
+Use this model to serve as an introduction to population genetics. Be sure to modify the EVOLUTION SETTINGS to simulate how different mechanisms of evolution can affect the allele frequencies and both within and between population variation.
 
 1. Vary the POPULATION-SIZE to explore how genetic drift affects very large and very small populations.
 
 2. Change very large populations to very small populations to explore bottleneck or founder's effects.
 
-3. Increase the MUTATION-RATE to a non-zero number to see how novelle mutations invade a population (or don't).
+3. Increase the MUTATION-RATE to a non-zero number to see how novelle mutations can invade a population.
 
 4. Turn on GENE-FLOW-BETWEEN-POPULATIONS and move populations within range of each other to see how populations can share alleles during reproduction.
 
-5. Use SELECTION-ON-PHENOTYPE to choose a color that the environmental selective pressures are acting on and move the slider RATE-OF-SELECTION to a value higher than one if the selective pressures favor this phenotype, and to a value lower than one if the selective pressures do not favor this phenotype. Observe how your choices affect the prevalance of that allele over generations.
+5. Use SELECTION-ON-PHENOTYPE to choose a color that the environmental selective pressures are acting on. Move the slider RATE-OF-SELECTION to a value higher than 1.0 if the selective pressures favor this phenotype, and to a value lower than 1.0 if the selective pressures do not favor this phenotype. Observe how your choices affect the prevalance of that fish color over generations.
 
 ## POPULATION NAMES
 
-The names generated during ADD POPULATION are taken from Huerta-Sánchez, Rohlfs and collegues' work on revealing the hidden female contributions to population genetics:
+The names of populations generated from clicking ADD POPULATION are taken from Huerta-Sánchez, Rohlfs and collegues' work on revealing the hidden female contributions to population genetics:
 
 Dung, S. K., López, A., Barragan, E. L., Reyes, R. J., Thu, R., Castellanos, E., Catalan, F., Huerta-Sánchez, E. & Rohlfs, R. V. (2019). Illuminating Women’s Hidden Contribution to Historical Theoretical Population Genetics. Genetics, 211(2), 363-366.
 
